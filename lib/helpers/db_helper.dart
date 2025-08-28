@@ -51,7 +51,13 @@ class DBHelper {
   // Handle database upgrade
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      await db.execute('ALTER TABLE $table ADD COLUMN $columnIsPinned INTEGER NOT NULL DEFAULT 0');
+      // Check if column already exists before adding it
+      final result = await db.rawQuery("PRAGMA table_info($table)");
+      final columnExists = result.any((column) => column['name'] == columnIsPinned);
+      
+      if (!columnExists) {
+        await db.execute('ALTER TABLE $table ADD COLUMN $columnIsPinned INTEGER NOT NULL DEFAULT 0');
+      }
     }
   }
 
