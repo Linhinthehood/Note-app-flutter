@@ -9,7 +9,6 @@ class DBHelper {
   static final DBHelper instance = DBHelper._privateConstructor();
   DBHelper._privateConstructor();
 
-
   Future<List<Note>> getAllNotes() async {
     final prefs = await SharedPreferences.getInstance();
     final notesJson = prefs.getStringList(_notesKey) ?? [];
@@ -22,70 +21,6 @@ class DBHelper {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
       return b.createdAt.compareTo(a.createdAt);
-
-  // Only have a single app-wide reference to the database.
-  static Database? _database;
-  Future<Database> get database async {
-    if (_database != null) return _database!;
-    _database = await _initDatabase();
-    return _database!;
-  }
-
-  _initDatabase() async {
-    String path = join(await getDatabasesPath(), _databaseName);
-    return await openDatabase(
-      path,
-      version: _databaseVersion,
-      onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
-    );
-  }
-
-  // SQL code to create the database table.
-  Future _onCreate(Database db, int version) async {
-    await db.execute('''
-          CREATE TABLE $table (
-            $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
-            $columnTitle TEXT NOT NULL,
-            $columnContent TEXT NOT NULL,
-            $columnCreatedAt TEXT NOT NULL,
-            $columnIsPinned INTEGER NOT NULL DEFAULT 0
-          )''');
-  }
-
-  // Handle database upgrade
-  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      // Check if column already exists before adding it
-      final result = await db.rawQuery("PRAGMA table_info($table)");
-      final columnExists =
-          result.any((column) => column['name'] == columnIsPinned);
-
-      if (!columnExists) {
-        await db.execute(
-            'ALTER TABLE $table ADD COLUMN $columnIsPinned INTEGER NOT NULL DEFAULT 0');
-      }
-    }
-  }
-
-  // Helper methods.
-  // Inserts a row in the database where each key in the Map is a column name
-  // and the value is the column value. The return value is the id of the
-  // inserted row.
-  Future<int> insert(Note note) async {
-    Database db = await instance.database;
-    return await db.insert(table, note.toMap());
-  }
-
-  // All of the rows are returned as a list of maps, where each map is
-  // a key-value list of columns. Pinned notes are shown first, then sorted by creation date.
-  Future<List<Note>> getAllNotes() async {
-    Database db = await instance.database;
-    final List<Map<String, dynamic>> maps = await db.query(table,
-        orderBy: "$columnIsPinned DESC, $columnCreatedAt DESC");
-    return List.generate(maps.length, (i) {
-      return Note.fromMap(maps[i]);
-
     });
   }
 
@@ -124,7 +59,6 @@ class DBHelper {
   }
 
   Future<int> delete(int id) async {
-
     final notes = await getAllNotes();
     final initialLength = notes.length;
     notes.removeWhere((note) => note.id == id);
@@ -137,13 +71,5 @@ class DBHelper {
     final prefs = await SharedPreferences.getInstance();
     final notesJson = notes.map((note) => json.encode(note.toMap())).toList();
     await prefs.setStringList(_notesKey, notesJson);
-
-    Database db = await instance.database;
-    return await db.delete(
-      table,
-      where: '$columnId = ?',
-      whereArgs: [id],
-    );
-
   }
 }
