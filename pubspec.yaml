@@ -2,7 +2,7 @@ name: note_app
 
 description: "A Flutter note-taking app with CI/CD pipeline"
 
-description: "A new Flutter project."
+
 
 publish_to: 'none'
 
