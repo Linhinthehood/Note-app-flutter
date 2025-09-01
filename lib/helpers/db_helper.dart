@@ -53,10 +53,12 @@ class DBHelper {
     if (oldVersion < 2) {
       // Check if column already exists before adding it
       final result = await db.rawQuery("PRAGMA table_info($table)");
-      final columnExists = result.any((column) => column['name'] == columnIsPinned);
-      
+      final columnExists =
+          result.any((column) => column['name'] == columnIsPinned);
+
       if (!columnExists) {
-        await db.execute('ALTER TABLE $table ADD COLUMN $columnIsPinned INTEGER NOT NULL DEFAULT 0');
+        await db.execute(
+            'ALTER TABLE $table ADD COLUMN $columnIsPinned INTEGER NOT NULL DEFAULT 0');
       }
     }
   }
@@ -74,10 +76,8 @@ class DBHelper {
   // a key-value list of columns. Pinned notes are shown first, then sorted by creation date.
   Future<List<Note>> getAllNotes() async {
     Database db = await instance.database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      table, 
-      orderBy: "$columnIsPinned DESC, $columnCreatedAt DESC"
-    );
+    final List<Map<String, dynamic>> maps = await db.query(table,
+        orderBy: "$columnIsPinned DESC, $columnCreatedAt DESC");
     return List.generate(maps.length, (i) {
       return Note.fromMap(maps[i]);
     });
@@ -100,9 +100,9 @@ class DBHelper {
   Future<int> delete(int id) async {
     Database db = await instance.database;
     return await db.delete(
-      table,  
+      table,
       where: '$columnId = ?',
       whereArgs: [id],
-    );  
+    );
   }
 }

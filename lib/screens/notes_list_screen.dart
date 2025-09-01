@@ -16,9 +16,10 @@ class NotesListScreen extends StatelessWidget {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         leading: Text('Notes',
-          style: TextStyle(fontWeight: FontWeight.bold,
-                          fontSize: 30,
-                          color: const Color.fromARGB(255, 97, 98, 99))),
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 30,
+                color: const Color.fromARGB(255, 97, 98, 99))),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           child: Icon(CupertinoIcons.add),
@@ -37,13 +38,13 @@ class NotesListScreen extends StatelessWidget {
 
           final groupedNotes = noteProvider.groupedNotes;
           final monthKeys = groupedNotes.keys.toList();
-          
+
           // Sort month keys: PINNED first, then chronologically (newest first)
           monthKeys.sort((a, b) {
             if (a == 'PINNED' && b != 'PINNED') return -1;
             if (a != 'PINNED' && b == 'PINNED') return 1;
             if (a == 'PINNED' && b == 'PINNED') return 0;
-            
+
             DateTime dateA = DateFormat('MMM yyyy').parse(a);
             DateTime dateB = DateFormat('MMM yyyy').parse(b);
             return dateB.compareTo(dateA);
@@ -72,16 +73,17 @@ class NotesListScreen extends StatelessWidget {
     return totalItems;
   }
 
-  Widget _buildItem(BuildContext context, NoteProvider noteProvider, List<String> monthKeys, int index) {
+  Widget _buildItem(BuildContext context, NoteProvider noteProvider,
+      List<String> monthKeys, int index) {
     int currentIndex = 0;
-    
+
     for (String monthKey in monthKeys) {
       // Check if this is a section header
       if (currentIndex == index) {
         return _buildSectionHeader(context, noteProvider, monthKey);
       }
       currentIndex++;
-      
+
       // Check if this is within the notes for this section
       if (noteProvider.isSectionExpanded(monthKey)) {
         final notesInSection = noteProvider.groupedNotes[monthKey]!;
@@ -96,20 +98,21 @@ class NotesListScreen extends StatelessWidget {
         currentIndex += notesInSection.length;
       }
     }
-    
+
     return Container(); // Fallback
   }
 
-  Widget _buildSectionHeader(BuildContext context, NoteProvider noteProvider, String monthKey) {
+  Widget _buildSectionHeader(
+      BuildContext context, NoteProvider noteProvider, String monthKey) {
     final isExpanded = noteProvider.isSectionExpanded(monthKey);
     final notesCount = noteProvider.groupedNotes[monthKey]!.length;
     final isPinnedSection = monthKey == 'PINNED';
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8, top: 16),
       child: Container(
         decoration: BoxDecoration(
-          color: isPinnedSection 
+          color: isPinnedSection
               ? CupertinoColors.systemOrange.withOpacity(0.1)
               : CupertinoColors.systemGrey6.resolveFrom(context),
           borderRadius: BorderRadius.circular(8),
@@ -120,7 +123,9 @@ class NotesListScreen extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                isExpanded ? CupertinoIcons.chevron_down : CupertinoIcons.chevron_right,
+                isExpanded
+                    ? CupertinoIcons.chevron_down
+                    : CupertinoIcons.chevron_right,
                 size: 16,
                 color: CupertinoColors.secondaryLabel.resolveFrom(context),
               ),
@@ -138,7 +143,7 @@ class NotesListScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: isPinnedSection 
+                  color: isPinnedSection
                       ? CupertinoColors.systemOrange
                       : CupertinoColors.label.resolveFrom(context),
                 ),
@@ -158,7 +163,8 @@ class NotesListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNoteCard(BuildContext context, NoteProvider noteProvider, Note note) {
+  Widget _buildNoteCard(
+      BuildContext context, NoteProvider noteProvider, Note note) {
     return Dismissible(
       key: Key(note.id.toString()),
       background: Container(
@@ -221,25 +227,27 @@ class NotesListScreen extends StatelessWidget {
         if (direction == DismissDirection.endToStart) {
           // Delete gesture (swipe left)
           return await showCupertinoDialog<bool>(
-            context: context,
-            builder: (BuildContext ctx) {
-              return CupertinoAlertDialog(
-                title: const Text('Delete Note'),
-                content: const Text('Are you sure you want to delete this note? This action cannot be undone.'),
-                actions: [
-                  CupertinoDialogAction(
-                    child: const Text('Cancel'),
-                    onPressed: () => Navigator.of(ctx).pop(false),
-                  ),
-                  CupertinoDialogAction(
-                    isDestructiveAction: true,
-                    child: const Text('Delete'),
-                    onPressed: () => Navigator.of(ctx).pop(true),
-                  ),
-                ],
-              );
-            },
-          ) ?? false;
+                context: context,
+                builder: (BuildContext ctx) {
+                  return CupertinoAlertDialog(
+                    title: const Text('Delete Note'),
+                    content: const Text(
+                        'Are you sure you want to delete this note? This action cannot be undone.'),
+                    actions: [
+                      CupertinoDialogAction(
+                        child: const Text('Cancel'),
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                      ),
+                      CupertinoDialogAction(
+                        isDestructiveAction: true,
+                        child: const Text('Delete'),
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                      ),
+                    ],
+                  );
+                },
+              ) ??
+              false;
         } else if (direction == DismissDirection.startToEnd) {
           // Pin/Unpin gesture (swipe right)
           noteProvider.togglePinNote(note);
