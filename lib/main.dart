@@ -15,14 +15,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => NoteProvider(),
-      child: CupertinoApp(
+      child: const CupertinoApp(
         title: 'Flutter Notes',
-        theme: const CupertinoThemeData(
+        theme: CupertinoThemeData(
           primaryColor: CupertinoColors.systemBlue,
           scaffoldBackgroundColor: CupertinoColors.systemGroupedBackground,
         ),
         debugShowCheckedModeBanner: false,
-        home: const NotesListScreen(),
+        home: NotesListScreen(),
       ),
     );
   }

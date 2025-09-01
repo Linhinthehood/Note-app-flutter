@@ -123,7 +123,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         });
       }
     } catch (error) {
-      print('Save error: $error');
+      
       if (mounted) {
         setState(() {
           _isSaving = false;
@@ -231,7 +231,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                       color: CupertinoColors.systemOrange,
                     ),
                     const SizedBox(width: 8),
-                    Text(
+                    const Text(
                       'Unsaved changes',
                       style: TextStyle(
                         color: CupertinoColors.systemOrange,
@@ -245,7 +245,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                       color: CupertinoColors.systemGreen,
                     ),
                     const SizedBox(width: 8),
-                    Text(
+                    const Text(
                       'All changes saved',
                       style: TextStyle(
                         color: CupertinoColors.systemGreen,
