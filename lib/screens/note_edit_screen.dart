@@ -1,18 +1,15 @@
 // lib/screens/note_edit_screen.dart
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/note.dart';
 import '../providers/note_provider.dart';
 
 class NoteEditScreen extends StatefulWidget {
-  final Note? note;
-
-  NoteEditScreen({this.note});
-
+  const NoteEditScreen({super.key, this.note});
+  final Note? note; // Make it nullable
   @override
-  _NoteEditScreenState createState() => _NoteEditScreenState();
+  State<NoteEditScreen> createState() => _NoteEditScreenState();
 }
 
 class _NoteEditScreenState extends State<NoteEditScreen> {
@@ -153,7 +150,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     if (_hasUnsavedChanges) {
       await _saveNote();
     }
-    Navigator.of(context).pop();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -161,11 +160,12 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(_currentNote == null ? 'New Note' : 'Edit Note'),
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
-          child: Icon(CupertinoIcons.back),
-          onPressed: _goBack,
-        ),
+        leading: // Fixed (move child to the end):
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: _goBack,
+              child: const Icon(CupertinoIcons.back),  // child is now last
+            )
       ),
       backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
       child: Padding(

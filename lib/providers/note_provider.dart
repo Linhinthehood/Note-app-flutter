@@ -7,7 +7,7 @@ import '../helpers/db_helper.dart';
 class NoteProvider with ChangeNotifier {
   List<Note> _notes = [];
   final DBHelper _dbHelper = DBHelper.instance;
-  Map<String, bool> _expandedSections = {};
+  final Map<String, bool> _expandedSections = {};
 
   List<Note> get notes => _notes;
   Map<String, bool> get expandedSections => _expandedSections;
