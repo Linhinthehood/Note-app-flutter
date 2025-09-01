@@ -36,7 +36,7 @@ class NoteProvider with ChangeNotifier {
       createdAt: DateTime.now(),
       isPinned: false,
     );
-    
+
     if (_dbHelper != null) {
       await _dbHelper.insert(newNote);
       await fetchNotes(); // Refresh the list from storage
@@ -110,7 +110,8 @@ class NoteProvider with ChangeNotifier {
 
     // Group unpinned notes by month
     for (Note note in unpinnedNotes) {
-      String monthKey = DateFormat('MMM yyyy').format(note.createdAt).toUpperCase();
+      String monthKey =
+          DateFormat('MMM yyyy').format(note.createdAt).toUpperCase();
       if (!grouped.containsKey(monthKey)) {
         grouped[monthKey] = [];
         // Initialize section as expanded if not set

@@ -7,19 +7,21 @@ import 'package:note_app/screens/notes_list_screen.dart';
 
 void main() {
   group('Notes App Tests', () {
-    testWidgets('App should launch without crashing', (WidgetTester tester) async {
+    testWidgets('App should launch without crashing',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         ChangeNotifierProvider(
           create: (_) => NoteProvider.forTesting(),
           child: const MyApp(),
         ),
       );
-      
+
       await tester.pumpAndSettle();
       expect(find.byType(CupertinoApp), findsOneWidget);
     });
 
-    testWidgets('NotesListScreen displays empty state', (WidgetTester tester) async {
+    testWidgets('NotesListScreen displays empty state',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         ChangeNotifierProvider(
           create: (_) => NoteProvider.forTesting(),
@@ -44,11 +46,11 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      
+
       // Tap the add button
       await tester.tap(find.byIcon(CupertinoIcons.add));
       await tester.pumpAndSettle();
-      
+
       // Should navigate to edit screen
       expect(find.text('New Note'), findsOneWidget);
     });

@@ -8,7 +8,7 @@ import '../providers/note_provider.dart';
 class NoteEditScreen extends StatefulWidget {
   const NoteEditScreen({super.key, this.note});
   final Note? note;
-  
+
   @override
   State<NoteEditScreen> createState() => _NoteEditScreenState();
 }
@@ -30,10 +30,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       _titleController.text = widget.note!.title;
       _contentController.text = widget.note!.content;
     }
-    
+
     _titleController.addListener(_onTextChanged);
     _contentController.addListener(_onTextChanged);
-    
+
     _periodicSaveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (_hasUnsavedChanges) {
         _saveNote();
@@ -49,11 +49,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     _contentController.removeListener(_onTextChanged);
     _titleController.dispose();
     _contentController.dispose();
-    
+
     if (_hasUnsavedChanges) {
       _saveNote();
     }
-    
+
     super.dispose();
   }
 
@@ -63,7 +63,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         _hasUnsavedChanges = true;
       });
     }
-    
+
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(seconds: 2), () {
       _saveNote();
@@ -72,10 +72,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
   Future<void> _saveNote() async {
     if (_isSaving) return;
-    
+
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
-    
+
     if (title.isEmpty && content.isEmpty) {
       setState(() {
         _hasUnsavedChanges = false;
@@ -123,7 +123,6 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         });
       }
     } catch (error) {
-      
       if (mounted) {
         setState(() {
           _isSaving = false;
@@ -157,8 +156,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
           child: Text(
             'Save',
             style: TextStyle(
-              color: _hasUnsavedChanges 
-                  ? CupertinoColors.activeBlue 
+              color: _hasUnsavedChanges
+                  ? CupertinoColors.activeBlue
                   : CupertinoColors.secondaryLabel.resolveFrom(context),
               fontWeight: FontWeight.w600,
             ),
@@ -187,10 +186,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                     ),
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
               ),
             ),
-            
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
@@ -202,13 +201,13 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                   textAlignVertical: TextAlignVertical.top,
                   style: const TextStyle(fontSize: 16),
                   decoration: BoxDecoration(
-                    color: CupertinoColors.systemBackground.resolveFrom(context),
+                    color:
+                        CupertinoColors.systemBackground.resolveFrom(context),
                   ),
                   padding: const EdgeInsets.all(8),
                 ),
               ),
             ),
-            
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
@@ -220,7 +219,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                     Text(
                       'Saving...',
                       style: TextStyle(
-                        color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                        color:
+                            CupertinoColors.secondaryLabel.resolveFrom(context),
                         fontSize: 14,
                       ),
                     ),
@@ -238,7 +238,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
                         fontSize: 14,
                       ),
                     ),
-                  ] else if (_titleController.text.isNotEmpty || _contentController.text.isNotEmpty) ...[
+                  ] else if (_titleController.text.isNotEmpty ||
+                      _contentController.text.isNotEmpty) ...[
                     const Icon(
                       CupertinoIcons.checkmark_circle_fill,
                       size: 16,

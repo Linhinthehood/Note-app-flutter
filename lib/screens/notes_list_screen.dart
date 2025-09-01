@@ -81,7 +81,8 @@ class NotesListScreen extends StatelessWidget {
     return totalItems;
   }
 
-  Widget _buildItem(BuildContext context, NoteProvider noteProvider, List<String> monthKeys, int index) {
+  Widget _buildItem(BuildContext context, NoteProvider noteProvider,
+      List<String> monthKeys, int index) {
     int currentIndex = 0;
 
     for (String monthKey in monthKeys) {
@@ -107,7 +108,8 @@ class NotesListScreen extends StatelessWidget {
     return Container();
   }
 
-  Widget _buildSectionHeader(BuildContext context, NoteProvider noteProvider, String monthKey) {
+  Widget _buildSectionHeader(
+      BuildContext context, NoteProvider noteProvider, String monthKey) {
     final isExpanded = noteProvider.isSectionExpanded(monthKey);
     final notesCount = noteProvider.groupedNotes[monthKey]!.length;
     final isPinnedSection = monthKey == 'PINNED';
@@ -127,7 +129,9 @@ class NotesListScreen extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                isExpanded ? CupertinoIcons.chevron_down : CupertinoIcons.chevron_right,
+                isExpanded
+                    ? CupertinoIcons.chevron_down
+                    : CupertinoIcons.chevron_right,
                 size: 16,
                 color: CupertinoColors.secondaryLabel.resolveFrom(context),
               ),
@@ -165,7 +169,8 @@ class NotesListScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNoteCard(BuildContext context, NoteProvider noteProvider, Note note) {
+  Widget _buildNoteCard(
+      BuildContext context, NoteProvider noteProvider, Note note) {
     return Dismissible(
       key: Key(note.id.toString()),
       background: Container(
@@ -227,25 +232,27 @@ class NotesListScreen extends StatelessWidget {
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.endToStart) {
           return await showCupertinoDialog<bool>(
-            context: context,
-            builder: (BuildContext ctx) {
-              return CupertinoAlertDialog(
-                title: const Text('Delete Note'),
-                content: const Text('Are you sure you want to delete this note? This action cannot be undone.'),
-                actions: [
-                  CupertinoDialogAction(
-                    onPressed: () => Navigator.of(ctx).pop(false),
-                    child: const Text('Cancel'),
-                  ),
-                  CupertinoDialogAction(
-                    isDestructiveAction: true,
-                    onPressed: () => Navigator.of(ctx).pop(true),
-                    child: const Text('Delete'),
-                  ),
-                ],
-              );
-            },
-          ) ?? false;
+                context: context,
+                builder: (BuildContext ctx) {
+                  return CupertinoAlertDialog(
+                    title: const Text('Delete Note'),
+                    content: const Text(
+                        'Are you sure you want to delete this note? This action cannot be undone.'),
+                    actions: [
+                      CupertinoDialogAction(
+                        onPressed: () => Navigator.of(ctx).pop(false),
+                        child: const Text('Cancel'),
+                      ),
+                      CupertinoDialogAction(
+                        isDestructiveAction: true,
+                        onPressed: () => Navigator.of(ctx).pop(true),
+                        child: const Text('Delete'),
+                      ),
+                    ],
+                  );
+                },
+              ) ??
+              false;
         } else if (direction == DismissDirection.startToEnd) {
           noteProvider.togglePinNote(note);
           return false;
