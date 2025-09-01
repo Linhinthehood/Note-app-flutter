@@ -26,12 +26,12 @@ import 'package:note_app/data/services/todo_api_service.dart' as _i4;
 
 class _FakeClient_0 extends _i1.SmartFake implements _i2.Client {
   _FakeClient_0(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+      : super(parent, parentInvocation);
 }
 
 class _FakeTodoModel_1 extends _i1.SmartFake implements _i3.TodoModel {
   _FakeTodoModel_1(Object parent, Invocation parentInvocation)
-    : super(parent, parentInvocation);
+      : super(parent, parentInvocation);
 }
 
 /// A class which mocks [TodoApiService].
@@ -43,30 +43,25 @@ class MockTodoApiService extends _i1.Mock implements _i4.TodoApiService {
   }
 
   @override
-  _i2.Client get client =>
-      (super.noSuchMethod(
-            Invocation.getter(#client),
-            returnValue: _FakeClient_0(this, Invocation.getter(#client)),
-          )
-          as _i2.Client);
+  _i2.Client get client => (super.noSuchMethod(
+        Invocation.getter(#client),
+        returnValue: _FakeClient_0(this, Invocation.getter(#client)),
+      ) as _i2.Client);
 
   @override
-  _i5.Future<List<_i3.TodoModel>> getTodos() =>
-      (super.noSuchMethod(
-            Invocation.method(#getTodos, []),
-            returnValue: _i5.Future<List<_i3.TodoModel>>.value(
-              <_i3.TodoModel>[],
-            ),
-          )
-          as _i5.Future<List<_i3.TodoModel>>);
+  _i5.Future<List<_i3.TodoModel>> getTodos() => (super.noSuchMethod(
+        Invocation.method(#getTodos, []),
+        returnValue: _i5.Future<List<_i3.TodoModel>>.value(
+          <_i3.TodoModel>[],
+        ),
+      ) as _i5.Future<List<_i3.TodoModel>>);
 
   @override
   _i5.Future<_i3.TodoModel> createTodo(_i3.TodoModel? todo) =>
       (super.noSuchMethod(
-            Invocation.method(#createTodo, [todo]),
-            returnValue: _i5.Future<_i3.TodoModel>.value(
-              _FakeTodoModel_1(this, Invocation.method(#createTodo, [todo])),
-            ),
-          )
-          as _i5.Future<_i3.TodoModel>);
+        Invocation.method(#createTodo, [todo]),
+        returnValue: _i5.Future<_i3.TodoModel>.value(
+          _FakeTodoModel_1(this, Invocation.method(#createTodo, [todo])),
+        ),
+      ) as _i5.Future<_i3.TodoModel>);
 }

@@ -34,21 +34,21 @@ void main() {
     testWidgets('shows loading indicator when loading', (tester) async {
       // Arrange
       final todoProvider = TodoProvider(apiService: mockApiService);
-      
+
       // Create a completer to control when the future completes
-      when(mockApiService.getTodos())
-          .thenAnswer((_) => Future.delayed(const Duration(milliseconds: 100), () => <TodoModel>[]));
+      when(mockApiService.getTodos()).thenAnswer((_) => Future.delayed(
+          const Duration(milliseconds: 100), () => <TodoModel>[]));
 
       // Act
       await tester.pumpWidget(createTestWidget(todoProvider));
-      
+
       // Trigger loading without waiting for completion
       todoProvider.loadTodos();
       await tester.pump(); // Just pump once to update the UI
 
       // Assert
       expect(find.byKey(const Key('loading_indicator')), findsOneWidget);
-      
+
       // Wait for the async operation to complete
       await tester.pumpAndSettle();
     });
@@ -71,8 +71,10 @@ void main() {
       // Arrange
       final todoProvider = TodoProvider(apiService: mockApiService);
       final mockTodos = [
-        const TodoModel(id: 1, userId: 1, title: 'Test Todo 1', completed: false),
-        const TodoModel(id: 2, userId: 1, title: 'Test Todo 2', completed: true),
+        const TodoModel(
+            id: 1, userId: 1, title: 'Test Todo 1', completed: false),
+        const TodoModel(
+            id: 2, userId: 1, title: 'Test Todo 2', completed: true),
       ];
       when(mockApiService.getTodos()).thenAnswer((_) async => mockTodos);
 
@@ -90,8 +92,7 @@ void main() {
     testWidgets('shows error state when API fails', (tester) async {
       // Arrange
       final todoProvider = TodoProvider(apiService: mockApiService);
-      when(mockApiService.getTodos())
-          .thenThrow(Exception('Network error'));
+      when(mockApiService.getTodos()).thenThrow(Exception('Network error'));
 
       // Act
       await tester.pumpWidget(createTestWidget(todoProvider));
@@ -127,12 +128,8 @@ void main() {
   group('TodoItemWidget Tests', () {
     testWidgets('displays todo correctly', (tester) async {
       // Arrange
-      const todo = TodoModel(
-        id: 1, 
-        userId: 1, 
-        title: 'Test Todo', 
-        completed: false
-      );
+      const todo =
+          TodoModel(id: 1, userId: 1, title: 'Test Todo', completed: false);
       bool toggleCalled = false;
       bool deleteCalled = false;
 
@@ -166,12 +163,8 @@ void main() {
 
     testWidgets('shows completed todo with strikethrough', (tester) async {
       // Arrange
-      const completedTodo = TodoModel(
-        id: 1, 
-        userId: 1, 
-        title: 'Completed Todo', 
-        completed: true
-      );
+      const completedTodo =
+          TodoModel(id: 1, userId: 1, title: 'Completed Todo', completed: true);
 
       // Act
       await tester.pumpWidget(

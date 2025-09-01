@@ -30,10 +30,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     if (widget.note != null) {
       _textController.text = '${widget.note!.title}\n${widget.note!.content}';
     }
-    
+
     // Listen to text changes for auto-save
     _textController.addListener(_onTextChanged);
-    
+
     // Set up periodic save timer (every 30 seconds)
     _periodicSaveTimer = Timer.periodic(Duration(seconds: 30), (_) {
       if (_hasUnsavedChanges) {
@@ -48,12 +48,12 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     _periodicSaveTimer?.cancel();
     _textController.removeListener(_onTextChanged);
     _textController.dispose();
-    
+
     // Save any pending changes before disposing
     if (_hasUnsavedChanges) {
       _saveNote();
     }
-    
+
     super.dispose();
   }
 
@@ -63,7 +63,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         _hasUnsavedChanges = true;
       });
     }
-    
+
     // Cancel previous timer and start a new one (debounce)
     _debounceTimer?.cancel();
     _debounceTimer = Timer(Duration(seconds: 2), () {
@@ -73,9 +73,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
 
   Future<void> _saveNote() async {
     if (_isSaving) return;
-    
+
     final fullText = _textController.text.trim();
-    
+
     // Don't save if text is empty
     if (fullText.isEmpty) {
       setState(() {
@@ -117,7 +117,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
           isPinned: false,
         );
         await noteProvider.addNote(title, content);
-        
+
         // Update current note reference for future saves
         // We need to get the newly created note from the provider
         await noteProvider.fetchNotes();

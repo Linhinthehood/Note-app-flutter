@@ -32,9 +32,9 @@ void main() {
           Uri.parse('https://jsonplaceholder.typicode.com/todos'),
           headers: {'Content-Type': 'application/json'},
         )).thenAnswer((_) async => http.Response(
-          json.encode(mockResponse),
-          200,
-        ));
+              json.encode(mockResponse),
+              200,
+            ));
 
         // Act
         final result = await todoApiService.getTodos();
@@ -99,9 +99,9 @@ void main() {
           headers: {'Content-Type': 'application/json'},
           body: json.encode(newTodo.toJson()),
         )).thenAnswer((_) async => http.Response(
-          json.encode(expectedResponse),
-          201,
-        ));
+              json.encode(expectedResponse),
+              201,
+            ));
 
         // Act
         final result = await todoApiService.createTodo(newTodo);

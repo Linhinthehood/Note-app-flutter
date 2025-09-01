@@ -27,8 +27,8 @@ class TodoItemWidget extends StatelessWidget {
           todo.title,
           key: Key('title_${todo.id}'),
           style: TextStyle(
-            decoration: todo.completed 
-                ? TextDecoration.lineThrough 
+            decoration: todo.completed
+                ? TextDecoration.lineThrough
                 : TextDecoration.none,
           ),
         ),

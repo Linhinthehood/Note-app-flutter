@@ -4,8 +4,8 @@ import '../../data/services/todo_api_service.dart';
 
 class TodoProvider with ChangeNotifier {
   final TodoApiService _apiService;
-  
-  TodoProvider({TodoApiService? apiService}) 
+
+  TodoProvider({TodoApiService? apiService})
       : _apiService = apiService ?? TodoApiService();
 
   List<TodoModel> _todos = [];
@@ -40,7 +40,7 @@ class TodoProvider with ChangeNotifier {
         title: title,
         completed: false,
       );
-      
+
       final createdTodo = await _apiService.createTodo(newTodo);
       _todos.insert(0, createdTodo);
       notifyListeners();
