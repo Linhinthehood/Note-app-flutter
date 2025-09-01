@@ -6,10 +6,15 @@ import '../models/note.dart';
 import '../providers/note_provider.dart';
 
 class NoteEditScreen extends StatefulWidget {
+
   
   const NoteEditScreen({super.key, this.note});
   final Note? note; // Make this public instead of private
   
+
+  const NoteEditScreen({super.key, this.note});
+  final Note? note; // Make it nullable
+
   @override
   State<NoteEditScreen> createState() => _NoteEditScreenState();
 }
@@ -30,11 +35,16 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       _titleController.text = widget.note!.title;
       _contentController.text = widget.note!.content;
     }
-    
+
     // Listen to text changes for auto-save
+
     _titleController.addListener(_onTextChanged);
     _contentController.addListener(_onTextChanged);
     
+
+    _textController.addListener(_onTextChanged);
+
+
     // Set up periodic save timer (every 30 seconds)
     _periodicSaveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (_hasUnsavedChanges) {
@@ -47,16 +57,22 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   void dispose() {
     _debounceTimer?.cancel();
     _periodicSaveTimer?.cancel();
+
     _titleController.removeListener(_onTextChanged);
     _contentController.removeListener(_onTextChanged);
     _titleController.dispose();
     _contentController.dispose();
     
+
+    _textController.removeListener(_onTextChanged);
+    _textController.dispose();
+
+
     // Save any pending changes before disposing
     if (_hasUnsavedChanges) {
       _saveNote();
     }
-    
+
     super.dispose();
   }
 
@@ -66,7 +82,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         _hasUnsavedChanges = true;
       });
     }
-    
+
     // Cancel previous timer and start a new one (debounce)
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(seconds: 2), () {
@@ -78,6 +94,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     
     
     if (_isSaving) return;
+
     
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
@@ -87,6 +104,13 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     // Don't save if both fields are empty
     if (title.isEmpty && content.isEmpty) {
       
+
+
+    final fullText = _textController.text.trim();
+
+    // Don't save if text is empty
+    if (fullText.isEmpty) {
+
       setState(() {
         _hasUnsavedChanges = false;
       });
@@ -104,10 +128,24 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       final noteProvider = Provider.of<NoteProvider>(context, listen: false);
 
       if (_currentNote == null) {
+
         
         await noteProvider.addNote(finalTitle, content);
         
         
+
+        // Creating a new note
+        Note newNote = Note(
+          title: title,
+          content: content,
+          createdAt: DateTime.now(),
+          isPinned: false,
+        );
+        await noteProvider.addNote(title, content);
+
+        // Update current note reference for future saves
+        // We need to get the newly created note from the provider
+
         await noteProvider.fetchNotes();
         
         
@@ -166,6 +204,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: Text(_currentNote == null ? 'New Note' : 'Edit Note'),
+
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: _goBack,
@@ -184,6 +223,14 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             ),
           ),
         ),
+
+        leading: // Fixed (move child to the end):
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: _goBack,
+              child: const Icon(CupertinoIcons.back),  // child is now last
+            )
+
       ),
       backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
       child: SafeArea(

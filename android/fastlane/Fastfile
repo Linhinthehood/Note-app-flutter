@@ -1,0 +1,38 @@
+default_platform(:android)
+
+platform :android do
+  desc "Deploy to Firebase App Distribution"
+  lane :deploy_to_firebase do
+    Dir.chdir("..") do
+      sh("flutter clean")
+      sh("flutter pub get")
+      sh("flutter build appbundle --release")
+    end
+    
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID"],
+      firebase_cli_token: ENV["FIREBASE_TOKEN"],
+      android_artifact_type: "AAB",
+      android_artifact_path: "../build/app/outputs/bundle/release/app-release.aab",
+      groups: "testers",
+      release_notes: "Automated build from CI/CD pipeline"
+    )
+  end
+
+  desc "Run tests only"
+  lane :test do
+    Dir.chdir("..") do
+      sh("flutter pub get")
+      sh("flutter test")
+    end
+  end
+
+  desc "Build only"
+  lane :build do
+    Dir.chdir("..") do
+      sh("flutter clean")
+      sh("flutter pub get")
+      sh("flutter build appbundle --release")
+    end
+  end
+end

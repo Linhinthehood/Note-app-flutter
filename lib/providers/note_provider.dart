@@ -6,7 +6,11 @@ import '../helpers/db_helper.dart';
 
 class NoteProvider with ChangeNotifier {
   List<Note> _notes = [];
+
   final dynamic _dbHelper; // Use dynamic to accept both types
+
+  final DBHelper _dbHelper = DBHelper.instance;
+
   final Map<String, bool> _expandedSections = {};
 
   List<Note> get notes => _notes;
@@ -88,7 +92,7 @@ class NoteProvider with ChangeNotifier {
     Map<String, List<Note>> grouped = {};
     List<Note> pinnedNotes = [];
     List<Note> unpinnedNotes = [];
-    
+
     // Separate pinned and unpinned notes
     for (Note note in _notes) {
       if (note.isPinned) {
@@ -97,7 +101,7 @@ class NoteProvider with ChangeNotifier {
         unpinnedNotes.add(note);
       }
     }
-    
+
     // Create PINNED group if there are pinned notes
     if (pinnedNotes.isNotEmpty) {
       grouped['PINNED'] = pinnedNotes;
@@ -108,10 +112,11 @@ class NoteProvider with ChangeNotifier {
       // Sort pinned notes by creation date (newest first)
       pinnedNotes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     }
-    
+
     // Group unpinned notes by month
     for (Note note in unpinnedNotes) {
-      String monthKey = DateFormat('MMM yyyy').format(note.createdAt).toUpperCase();
+      String monthKey =
+          DateFormat('MMM yyyy').format(note.createdAt).toUpperCase();
       if (!grouped.containsKey(monthKey)) {
         grouped[monthKey] = [];
         // Initialize section as expanded if not set
@@ -121,14 +126,14 @@ class NoteProvider with ChangeNotifier {
       }
       grouped[monthKey]!.add(note);
     }
-    
+
     // Sort notes within each month group by creation date (newest first)
     grouped.forEach((key, notes) {
       if (key != 'PINNED') {
         notes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       }
     });
-    
+
     return grouped;
   }
 
@@ -141,6 +146,7 @@ class NoteProvider with ChangeNotifier {
     return _expandedSections[monthKey] ?? true;
   }
 }
+
 // Remove the _MockDBHelper class entirely and replace with this:
 abstract class DBHelperInterface {
   Future<List<Note>> getAllNotes();
@@ -162,3 +168,4 @@ class _MockDBHelper implements DBHelperInterface {
   @override
   Future<int> delete(int id) async => 1;
 }
+
