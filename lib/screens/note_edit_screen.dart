@@ -1,22 +1,21 @@
 // lib/screens/note_edit_screen.dart
 import 'dart:async';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/note.dart';
 import '../providers/note_provider.dart';
 
 class NoteEditScreen extends StatefulWidget {
-  final Note? note;
-
-  NoteEditScreen({this.note});
-
+  
+  const NoteEditScreen({super.key, this.note});
+  final Note? note; // Make this public instead of private
+  
   @override
-  _NoteEditScreenState createState() => _NoteEditScreenState();
+  State<NoteEditScreen> createState() => _NoteEditScreenState();
 }
-
 class _NoteEditScreenState extends State<NoteEditScreen> {
-  final _textController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _contentController = TextEditingController();
   Timer? _debounceTimer;
   Timer? _periodicSaveTimer;
   bool _hasUnsavedChanges = false;
@@ -28,14 +27,16 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     super.initState();
     _currentNote = widget.note;
     if (widget.note != null) {
-      _textController.text = '${widget.note!.title}\n${widget.note!.content}';
+      _titleController.text = widget.note!.title;
+      _contentController.text = widget.note!.content;
     }
     
     // Listen to text changes for auto-save
-    _textController.addListener(_onTextChanged);
+    _titleController.addListener(_onTextChanged);
+    _contentController.addListener(_onTextChanged);
     
     // Set up periodic save timer (every 30 seconds)
-    _periodicSaveTimer = Timer.periodic(Duration(seconds: 30), (_) {
+    _periodicSaveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (_hasUnsavedChanges) {
         _saveNote();
       }
@@ -46,8 +47,10 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   void dispose() {
     _debounceTimer?.cancel();
     _periodicSaveTimer?.cancel();
-    _textController.removeListener(_onTextChanged);
-    _textController.dispose();
+    _titleController.removeListener(_onTextChanged);
+    _contentController.removeListener(_onTextChanged);
+    _titleController.dispose();
+    _contentController.dispose();
     
     // Save any pending changes before disposing
     if (_hasUnsavedChanges) {
@@ -66,18 +69,24 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     
     // Cancel previous timer and start a new one (debounce)
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(Duration(seconds: 2), () {
+    _debounceTimer = Timer(const Duration(seconds: 2), () {
       _saveNote();
     });
   }
 
   Future<void> _saveNote() async {
+    
+    
     if (_isSaving) return;
     
-    final fullText = _textController.text.trim();
+    final title = _titleController.text.trim();
+    final content = _contentController.text.trim();
     
-    // Don't save if text is empty
-    if (fullText.isEmpty) {
+    
+    
+    // Don't save if both fields are empty
+    if (title.isEmpty && content.isEmpty) {
+      
       setState(() {
         _hasUnsavedChanges = false;
       });
@@ -88,64 +97,58 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       _isSaving = true;
     });
 
-    final newlineIndex = fullText.indexOf('\n');
-    String title;
-    String content;
-
-    if (newlineIndex != -1) {
-      title = fullText.substring(0, newlineIndex).trim();
-      content = fullText.substring(newlineIndex + 1).trim();
-    } else {
-      title = fullText.trim();
-      content = "";
-    }
-
-    // Use a default title if empty
-    if (title.isEmpty) {
-      title = 'Untitled Note';
-    }
+    final finalTitle = title.isEmpty ? 'Untitled Note' : title;
+    
 
     try {
       final noteProvider = Provider.of<NoteProvider>(context, listen: false);
 
       if (_currentNote == null) {
-        // Creating a new note
-        Note newNote = Note(
-          title: title,
-          content: content,
-          createdAt: DateTime.now(),
-          isPinned: false,
-        );
-        await noteProvider.addNote(title, content);
         
-        // Update current note reference for future saves
-        // We need to get the newly created note from the provider
+        await noteProvider.addNote(finalTitle, content);
+        
+        
         await noteProvider.fetchNotes();
+        
+        
         _currentNote = noteProvider.notes.firstWhere(
-          (note) => note.title == title && note.content == content,
-          orElse: () => newNote,
+          (note) => note.title == finalTitle && note.content == content,
+          orElse: () => Note(
+            title: finalTitle,
+            content: content,
+            createdAt: DateTime.now(),
+            isPinned: false,
+          ),
         );
+        
       } else {
-        // Updating existing note
+        
         Note updatedNote = Note(
           id: _currentNote!.id,
-          title: title,
+          title: finalTitle,
           content: content,
           createdAt: _currentNote!.createdAt,
           isPinned: _currentNote!.isPinned,
         );
         await noteProvider.updateNote(updatedNote);
         _currentNote = updatedNote;
+        
       }
 
-      setState(() {
-        _hasUnsavedChanges = false;
-        _isSaving = false;
-      });
+      if (mounted) {
+        setState(() {
+          _hasUnsavedChanges = false;
+          _isSaving = false;
+        });
+        
+      }
     } catch (error) {
-      setState(() {
-        _isSaving = false;
-      });
+      print('Save error: $error');
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
     }
   }
 
@@ -153,7 +156,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     if (_hasUnsavedChanges) {
       await _saveNote();
     }
-    Navigator.of(context).pop();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -163,26 +168,118 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         middle: Text(_currentNote == null ? 'New Note' : 'Edit Note'),
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
-          child: Icon(CupertinoIcons.back),
           onPressed: _goBack,
+          child: const Icon(CupertinoIcons.back),
+        ),
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: _hasUnsavedChanges ? _saveNote : null,
+          child: Text(
+            'Save',
+            style: TextStyle(
+              color: _hasUnsavedChanges 
+                  ? CupertinoColors.activeBlue 
+                  : CupertinoColors.secondaryLabel.resolveFrom(context),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
       ),
       backgroundColor: CupertinoColors.systemBackground.resolveFrom(context),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-        child: SafeArea(
-          child: CupertinoTextField(
-            controller: _textController,
-            autofocus: true,
-            maxLines: null,
-            expands: true,
-            textAlignVertical: TextAlignVertical.top,
-            style: TextStyle(fontSize: 18),
-            decoration: BoxDecoration(
-              color: CupertinoColors.systemBackground
-                  .resolveFrom(context), // Adapts to light/dark mode
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Title field
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: CupertinoTextField(
+                controller: _titleController,
+                placeholder: 'Note title',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemBackground.resolveFrom(context),
+                  border: Border(
+                    bottom: BorderSide(
+                      color: CupertinoColors.separator.resolveFrom(context),
+                      width: 0.5,
+                    ),
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              ),
             ),
-          ),
+            
+            // Content field
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: CupertinoTextField(
+                  controller: _contentController,
+                  placeholder: 'Start typing your note...',
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  style: const TextStyle(fontSize: 16),
+                  decoration: BoxDecoration(
+                    color: CupertinoColors.systemBackground.resolveFrom(context),
+                  ),
+                  padding: const EdgeInsets.all(8),
+                ),
+              ),
+            ),
+            
+            // Status indicator at bottom
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_isSaving) ...[
+                    const CupertinoActivityIndicator(),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Saving...',
+                      style: TextStyle(
+                        color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ] else if (_hasUnsavedChanges) ...[
+                    Icon(
+                      CupertinoIcons.circle_fill,
+                      size: 8,
+                      color: CupertinoColors.systemOrange,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Unsaved changes',
+                      style: TextStyle(
+                        color: CupertinoColors.systemOrange,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ] else ...[
+                    Icon(
+                      CupertinoIcons.checkmark_circle_fill,
+                      size: 16,
+                      color: CupertinoColors.systemGreen,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'All changes saved',
+                      style: TextStyle(
+                        color: CupertinoColors.systemGreen,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

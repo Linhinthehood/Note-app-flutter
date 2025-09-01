@@ -1,6 +1,4 @@
 // lib/screens/notes_list_screen.dart
-//import 'dart:ffi';
-
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -16,23 +14,34 @@ class NotesListScreen extends StatelessWidget {
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         leading: Text('Notes',
-          style: TextStyle(fontWeight: FontWeight.bold,
-                          fontSize: 30,
-                          color: const Color.fromARGB(255, 97, 98, 99))),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 30,
+            color: CupertinoColors.label.resolveFrom(context),
+          ),
+        ),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
-          child: Icon(CupertinoIcons.add),
           onPressed: () {
             Navigator.of(context).push(CupertinoPageRoute(
-              builder: (context) => NoteEditScreen(),
+              builder: (context) => const NoteEditScreen(),
             ));
           },
+          child: Icon(CupertinoIcons.add),
         ),
       ),
       child: Consumer<NoteProvider>(
         builder: (context, noteProvider, child) {
           if (noteProvider.notes.isEmpty) {
-            return Center(child: Text('No notes yet. Add one!'));
+            return Center(
+              child: Text(
+                'No notes yet. Add one!',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                ),
+              ),
+            );
           }
 
           final groupedNotes = noteProvider.groupedNotes;
@@ -50,7 +59,7 @@ class NotesListScreen extends StatelessWidget {
           });
 
           return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 110, 16, 16),
+            padding: EdgeInsets.fromLTRB(16, 110, 16, 16),
             itemCount: _calculateTotalItems(noteProvider, monthKeys),
             itemBuilder: (context, index) {
               return _buildItem(context, noteProvider, monthKeys, index);
@@ -89,7 +98,7 @@ class NotesListScreen extends StatelessWidget {
           final noteIndex = index - currentIndex;
           final note = notesInSection[noteIndex];
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.only(bottom: 12),
             child: _buildNoteCard(context, noteProvider, note),
           );
         }
@@ -106,7 +115,7 @@ class NotesListScreen extends StatelessWidget {
     final isPinnedSection = monthKey == 'PINNED';
     
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8, top: 16),
+      padding: EdgeInsets.only(bottom: 8, top: 16),
       child: Container(
         decoration: BoxDecoration(
           color: isPinnedSection 
@@ -115,7 +124,7 @@ class NotesListScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
         ),
         child: CupertinoButton(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           onPressed: () => noteProvider.toggleSection(monthKey),
           child: Row(
             children: [
@@ -124,14 +133,14 @@ class NotesListScreen extends StatelessWidget {
                 size: 16,
                 color: CupertinoColors.secondaryLabel.resolveFrom(context),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               if (isPinnedSection) ...[
-                const Icon(
+                Icon(
                   CupertinoIcons.pin_fill,
                   size: 16,
                   color: CupertinoColors.systemOrange,
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
               ],
               Text(
                 monthKey,
@@ -143,7 +152,7 @@ class NotesListScreen extends StatelessWidget {
                       : CupertinoColors.label.resolveFrom(context),
                 ),
               ),
-              const Spacer(),
+              Spacer(),
               Text(
                 '$notesCount note${notesCount == 1 ? '' : 's'}',
                 style: TextStyle(
@@ -162,13 +171,13 @@ class NotesListScreen extends StatelessWidget {
     return Dismissible(
       key: Key(note.id.toString()),
       background: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
+        margin: EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
           color: CupertinoColors.systemGreen,
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: 20),
+        padding: EdgeInsets.only(left: 20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -177,10 +186,10 @@ class NotesListScreen extends StatelessWidget {
               color: CupertinoColors.white,
               size: 24,
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               note.isPinned ? 'Unpin' : 'Pin',
-              style: const TextStyle(
+              style: TextStyle(
                 color: CupertinoColors.white,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -190,14 +199,14 @@ class NotesListScreen extends StatelessWidget {
         ),
       ),
       secondaryBackground: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
+        margin: EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
           color: CupertinoColors.destructiveRed,
           borderRadius: BorderRadius.circular(12),
         ),
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Column(
+        padding: EdgeInsets.only(right: 20),
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
@@ -219,61 +228,59 @@ class NotesListScreen extends StatelessWidget {
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.endToStart) {
-          // Delete gesture (swipe left)
           return await showCupertinoDialog<bool>(
             context: context,
             builder: (BuildContext ctx) {
               return CupertinoAlertDialog(
-                title: const Text('Delete Note'),
-                content: const Text('Are you sure you want to delete this note? This action cannot be undone.'),
+                title: Text('Delete Note'),
+                content: Text('Are you sure you want to delete this note? This action cannot be undone.'),
                 actions: [
                   CupertinoDialogAction(
-                    child: const Text('Cancel'),
                     onPressed: () => Navigator.of(ctx).pop(false),
+                    child: Text('Cancel'),
                   ),
                   CupertinoDialogAction(
                     isDestructiveAction: true,
-                    child: const Text('Delete'),
                     onPressed: () => Navigator.of(ctx).pop(true),
+                    child: Text('Delete'),
                   ),
                 ],
               );
             },
           ) ?? false;
         } else if (direction == DismissDirection.startToEnd) {
-          // Pin/Unpin gesture (swipe right)
           noteProvider.togglePinNote(note);
-          return false; // Don't dismiss the item
+          return false;
         }
         return false;
       },
       onDismissed: (direction) {
         if (direction == DismissDirection.endToStart) {
-          // Delete the note
           noteProvider.deleteNote(note.id!);
         }
       },
       child: Container(
         decoration: BoxDecoration(
-          color: CupertinoColors.systemBackground,
+          color: CupertinoColors.systemBackground.resolveFrom(context),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
               color: CupertinoColors.systemGrey.withOpacity(0.1),
               blurRadius: 8,
-              offset: const Offset(0, 2),
+              offset: Offset(0, 2),
             ),
           ],
         ),
         child: CupertinoListTile(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           title: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: EdgeInsets.only(bottom: 8),
             child: Text(
               note.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 18,
+                color: CupertinoColors.label.resolveFrom(context),
               ),
             ),
           ),
@@ -284,17 +291,17 @@ class NotesListScreen extends StatelessWidget {
                 note.content,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
-                  color: CupertinoColors.secondaryLabel,
+                  color: CupertinoColors.label.resolveFrom(context),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 DateFormat.yMMMd().format(note.createdAt),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: CupertinoColors.tertiaryLabel,
+                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
                   fontWeight: FontWeight.w500,
                 ),
               ),
