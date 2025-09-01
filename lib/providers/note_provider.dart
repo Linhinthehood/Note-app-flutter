@@ -96,7 +96,15 @@ class NoteProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-
+  Future<void> addNoteWithMedia(Note note) async {
+  if (_dbHelper != null) {
+    await _dbHelper.insert(note);
+    await fetchNotes();
+  } else {
+    _notes.add(note);
+    notifyListeners();
+  }
+}
   Future<void> togglePinNote(Note note) async {
     Note updatedNote = Note(
       id: note.id,
