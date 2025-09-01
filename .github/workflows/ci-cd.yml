@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -33,17 +33,11 @@ jobs:
     
     - name: Run tests
       run: flutter test --coverage
-    
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: coverage/lcov.info
-        name: codecov-umbrella
-        fail_ci_if_error: false
 
-  build:
+  build-android:
     needs: test
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     
     steps:
     - uses: actions/checkout@v4
@@ -53,6 +47,13 @@ jobs:
       with:
         flutter-version: '3.24.0'
         channel: 'stable'
+    
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.1'  # Updated to 3.1
+        bundler-cache: true
+        working-directory: android
     
     - name: Install dependencies
       run: flutter pub get
@@ -71,9 +72,11 @@ jobs:
       with:
         name: release-apk
         path: build/app/outputs/flutter-apk/app-release.apk
+        retention-days: 30
     
     - name: Upload App Bundle
       uses: actions/upload-artifact@v4
       with:
         name: release-aab
         path: build/app/outputs/bundle/release/app-release.aab
+        retention-days: 30
