@@ -28,48 +28,87 @@ class NotesListScreen extends StatelessWidget {
               builder: (context) => const NoteEditScreen(),
             ));
           },
-          child: const Icon(CupertinoIcons.add),
+          child: Icon(CupertinoIcons.add),
         ),
       ),
-      child: Consumer<NoteProvider>(
-        builder: (context, noteProvider, child) {
-          if (noteProvider.notes.isEmpty) {
-            return Center(
-              child: Text(
-                'No notes yet. Add one!',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: CupertinoColors.secondaryLabel.resolveFrom(context),
+      child: SafeArea(
+        child: Consumer<NoteProvider>(
+          builder: (context, noteProvider, child) {
+            return Column(
+              children: [
+                // Search Bar - positioned after SafeArea
+                Container(
+                  padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: CupertinoSearchTextField(
+                    placeholder: 'Search notes...',
+                    onChanged: (value) => noteProvider.searchNotes(value),
+                    onSuffixTap: () => noteProvider.clearSearch(),
+                  ),
                 ),
-              ),
+                
+                // Notes List
+                Expanded(
+                  child: _buildNotesList(context, noteProvider),
+                ),
+              ],
             );
-          }
-
-          final groupedNotes = noteProvider.groupedNotes;
-          final monthKeys = groupedNotes.keys.toList();
-
-          monthKeys.sort((a, b) {
-            if (a == 'PINNED' && b != 'PINNED') return -1;
-            if (a != 'PINNED' && b == 'PINNED') return 1;
-            if (a == 'PINNED' && b == 'PINNED') return 0;
-
-            DateTime dateA = DateFormat('MMM yyyy').parse(a);
-            DateTime dateB = DateFormat('MMM yyyy').parse(b);
-            return dateB.compareTo(dateA);
-          });
-
-          return ListView.builder(
-            padding: const EdgeInsets.fromLTRB(16, 110, 16, 16),
-            itemCount: _calculateTotalItems(noteProvider, monthKeys),
-            itemBuilder: (context, index) {
-              return _buildItem(context, noteProvider, monthKeys, index);
-            },
-          );
-        },
+          },
+        ),
+      ),
+    );
+  }
+  Widget _buildNotesList(BuildContext context, NoteProvider noteProvider) {
+  if (noteProvider.notes.isEmpty) {
+    return Center(
+      child: Text(
+        noteProvider.searchQuery.isEmpty 
+            ? 'No notes yet. Add one!'
+            : 'No notes found for "${noteProvider.searchQuery}"',
+        style: TextStyle(
+          fontSize: 16,
+          color: CupertinoColors.secondaryLabel.resolveFrom(context),
+        ),
       ),
     );
   }
 
+  // If searching, show simple list without grouping
+  if (noteProvider.searchQuery.isNotEmpty) {
+    return ListView.builder(
+      padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+      itemCount: noteProvider.notes.length,
+      itemBuilder: (context, index) {
+        final note = noteProvider.notes[index];
+        return Padding(
+          padding: EdgeInsets.only(bottom: 12),
+          child: _buildNoteCard(context, noteProvider, note),
+        );
+      },
+    );
+  }
+
+  // Normal grouped view when not searching
+  final groupedNotes = noteProvider.groupedNotes;
+  final monthKeys = groupedNotes.keys.toList();
+
+  monthKeys.sort((a, b) {
+    if (a == 'PINNED' && b != 'PINNED') return -1;
+    if (a != 'PINNED' && b == 'PINNED') return 1;
+    if (a == 'PINNED' && b == 'PINNED') return 0;
+
+    DateTime dateA = DateFormat('MMM yyyy').parse(a);
+    DateTime dateB = DateFormat('MMM yyyy').parse(b);
+    return dateB.compareTo(dateA);
+  });
+
+  return ListView.builder(
+    padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+    itemCount: _calculateTotalItems(noteProvider, monthKeys),
+    itemBuilder: (context, index) {
+      return _buildItem(context, noteProvider, monthKeys, index);
+    },
+  );
+}
   int _calculateTotalItems(NoteProvider noteProvider, List<String> monthKeys) {
     int totalItems = 0;
     for (String monthKey in monthKeys) {

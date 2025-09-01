@@ -8,8 +8,10 @@ class NoteProvider with ChangeNotifier {
   List<Note> _notes = [];
   final dynamic _dbHelper;
   final Map<String, bool> _expandedSections = {};
-
-  List<Note> get notes => _notes;
+  String _searchQuery = '';
+  
+  List<Note> get notes => _searchQuery.isEmpty ? _notes : _filteredNotes;
+  String get searchQuery => _searchQuery;
   Map<String, bool> get expandedSections => _expandedSections;
 
   // Regular constructor
@@ -28,7 +30,30 @@ class NoteProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+  List<Note> get _filteredNotes {
+    if (_searchQuery.isEmpty) return _notes;
+    
+    final query = _searchQuery.toLowerCase();
+    return _notes.where((note) {
+      final titleMatch = note.title.toLowerCase().contains(query);
+      final contentMatch = note.content.toLowerCase().contains(query);
+      final dateMatch = DateFormat.yMMMd().format(note.createdAt).toLowerCase().contains(query);
+      
+      return titleMatch || contentMatch || dateMatch;
+    }).toList();
+  }
 
+  // Add search method
+  void searchNotes(String query) {
+    _searchQuery = query;
+    notifyListeners();
+  }
+
+  // Clear search
+  void clearSearch() {
+    _searchQuery = '';
+    notifyListeners();
+  }
   Future<void> addNote(String title, String content) async {
     Note newNote = Note(
       title: title,
