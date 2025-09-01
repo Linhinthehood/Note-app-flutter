@@ -6,11 +6,7 @@ import '../helpers/db_helper.dart';
 
 class NoteProvider with ChangeNotifier {
   List<Note> _notes = [];
-
-  final dynamic _dbHelper; // Use dynamic to accept both types
-
-  final DBHelper _dbHelper = DBHelper.instance;
-
+  final dynamic _dbHelper;
   final Map<String, bool> _expandedSections = {};
 
   List<Note> get notes => _notes;
@@ -19,7 +15,7 @@ class NoteProvider with ChangeNotifier {
   // Regular constructor
   NoteProvider() : _dbHelper = DBHelper.instance {
     fetchNotes();
-  } 
+  }
 
   // Test constructor
   NoteProvider.forTesting() : _dbHelper = _MockDBHelper() {
@@ -28,7 +24,7 @@ class NoteProvider with ChangeNotifier {
 
   Future<void> fetchNotes() async {
     if (_dbHelper != null) {
-      _notes = await _dbHelper!.getAllNotes();
+      _notes = await _dbHelper.getAllNotes();
       notifyListeners();
     }
   }
@@ -42,8 +38,8 @@ class NoteProvider with ChangeNotifier {
     );
     
     if (_dbHelper != null) {
-      await _dbHelper!.insert(newNote);
-      fetchNotes(); // Refresh the list from DB
+      await _dbHelper.insert(newNote);
+      await fetchNotes(); // Refresh the list from storage
     } else {
       // For testing - just add to memory
       _notes.add(newNote);
@@ -53,8 +49,8 @@ class NoteProvider with ChangeNotifier {
 
   Future<void> updateNote(Note note) async {
     if (_dbHelper != null) {
-      await _dbHelper!.update(note);
-      fetchNotes(); // Refresh the list
+      await _dbHelper.update(note);
+      await fetchNotes(); // Refresh the list
     } else {
       // For testing - update in memory
       int index = _notes.indexWhere((n) => n.id == note.id);
@@ -67,8 +63,8 @@ class NoteProvider with ChangeNotifier {
 
   Future<void> deleteNote(int id) async {
     if (_dbHelper != null) {
-      await _dbHelper!.delete(id);
-      fetchNotes(); // Refresh the list
+      await _dbHelper.delete(id);
+      await fetchNotes(); // Refresh the list
     } else {
       // For testing - remove from memory
       _notes.removeWhere((note) => note.id == id);
@@ -87,7 +83,6 @@ class NoteProvider with ChangeNotifier {
     await updateNote(updatedNote);
   }
 
-  // Keep your existing groupedNotes, toggleSection, and isSectionExpanded methods unchanged
   Map<String, List<Note>> get groupedNotes {
     Map<String, List<Note>> grouped = {};
     List<Note> pinnedNotes = [];
@@ -115,8 +110,7 @@ class NoteProvider with ChangeNotifier {
 
     // Group unpinned notes by month
     for (Note note in unpinnedNotes) {
-      String monthKey =
-          DateFormat('MMM yyyy').format(note.createdAt).toUpperCase();
+      String monthKey = DateFormat('MMM yyyy').format(note.createdAt).toUpperCase();
       if (!grouped.containsKey(monthKey)) {
         grouped[monthKey] = [];
         // Initialize section as expanded if not set
@@ -147,25 +141,9 @@ class NoteProvider with ChangeNotifier {
   }
 }
 
-// Remove the _MockDBHelper class entirely and replace with this:
-abstract class DBHelperInterface {
-  Future<List<Note>> getAllNotes();
-  Future<int> insert(Note note);
-  Future<int> update(Note note);
-  Future<int> delete(int id);
-}
-
-class _MockDBHelper implements DBHelperInterface {
-  @override
+class _MockDBHelper {
   Future<List<Note>> getAllNotes() async => [];
-  
-  @override
   Future<int> insert(Note note) async => 1;
-  
-  @override
   Future<int> update(Note note) async => 1;
-  
-  @override
   Future<int> delete(int id) async => 1;
 }
-
