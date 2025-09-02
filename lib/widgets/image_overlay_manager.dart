@@ -271,9 +271,6 @@ class ImageOverlayManager {
           },
           onDoubleTap: () => _openImageViewer(context, imagePath, text),
           onPanStart: (details) {
-            // Capture the initial touch point relative to the image
-            final imageWidth = imageSize.width + 16;
-            final imageHeight = imageSize.height + 16;
             _dragAnchorPoint = Offset(
               details.localPosition.dx,
               details.localPosition.dy,
@@ -326,7 +323,6 @@ class ImageOverlayManager {
                   final targetY = localPosition.dy - 12 - anchorOffset.dy;
                   
                   final imageWidth = imageSize.width + 16;
-                  final imageHeight = imageSize.height + 16;
                   final constrainedX = targetX.clamp(0.0, _containerSize.width - imageWidth - 24);
                   final constrainedY = targetY.clamp(0.0, double.infinity);
                   
