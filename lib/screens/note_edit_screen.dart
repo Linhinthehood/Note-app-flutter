@@ -2,13 +2,17 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/note.dart';
 import '../providers/note_provider.dart';
 import '../widgets/highlighted_text.dart';
-import 'package:flutter/material.dart' show Colors;
+import '../widgets/rich_text_editor.dart';
+
 class NoteEditScreen extends StatefulWidget {
   const NoteEditScreen({super.key, this.note});
   final Note? note;
@@ -21,6 +25,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final _contentSearchController = TextEditingController();
+  final FocusNode _contentFocusNode = FocusNode();
   Timer? _debounceTimer;
   Timer? _periodicSaveTimer;
   bool _hasUnsavedChanges = false;
@@ -29,6 +34,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   Note? _currentNote;
   List<String> _imagePaths = [];
   final ImagePicker _picker = ImagePicker();
+  
+  // Key to access the RichTextEditor's functionality
+  final GlobalKey<State<RichTextEditor>> _editorKey = GlobalKey<State<RichTextEditor>>();
 
   @override
   void initState() {
@@ -77,6 +85,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     _titleController.dispose();
     _contentController.dispose();
     _contentSearchController.dispose();
+    _contentFocusNode.dispose();
     
     if (_hasUnsavedChanges) {
       _saveNote();
@@ -84,6 +93,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     
     super.dispose();
   }
+
+
 
   void _onTextChanged() {
     if (!_hasUnsavedChanges) {
@@ -93,7 +104,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     }
     
     _debounceTimer?.cancel();
-    _debounceTimer = Timer(const Duration(seconds: 2), () {
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () { // Shorter delay for metadata
       _saveNote();
     });
   }
@@ -102,7 +113,18 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     if (_isSaving) return;
     
     final title = _titleController.text.trim();
-    final content = _contentController.text.trim();
+    var content = _contentController.text.trim();
+    
+    // Save image metadata before processing content
+    final editorState = _editorKey.currentState;
+    if (editorState != null && editorState is ImageMetadataProvider) {
+      content = (editorState as ImageMetadataProvider).saveImageMetadata(content);
+    }
+    
+    // Extract image paths from content
+    final imagePattern = RegExp(r'\[IMAGE:([^\]]+)\]');
+    final matches = imagePattern.allMatches(content);
+    _imagePaths = matches.map((match) => match.group(1)!).toList();
     
     if (title.isEmpty && content.isEmpty && _imagePaths.isEmpty) {
       setState(() {
@@ -123,7 +145,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       if (_currentNote == null) {
         Note newNote = Note(
           title: finalTitle,
-          content: content,
+          content: content, // This now includes image metadata
           createdAt: DateTime.now(),
           isPinned: false,
           imagePaths: _imagePaths,
@@ -138,7 +160,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         Note updatedNote = Note(
           id: _currentNote!.id,
           title: finalTitle,
-          content: content,
+          content: content, // This now includes image metadata
           createdAt: _currentNote!.createdAt,
           isPinned: _currentNote!.isPinned,
           imagePaths: _imagePaths,
@@ -163,26 +185,35 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   }
 
   Future<void> _pickImage() async {
+    List<CupertinoActionSheetAction> actions = [];
+    
+    if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) {
+      actions.add(
+        CupertinoActionSheetAction(
+          onPressed: () {
+            Navigator.pop(context);
+            _getImage(ImageSource.camera);
+          },
+          child: const Text('Take Photo'),
+        ),
+      );
+    }
+    
+    actions.add(
+      CupertinoActionSheetAction(
+        onPressed: () {
+          Navigator.pop(context);
+          _getImage(ImageSource.gallery);
+        },
+        child: const Text('Choose from Gallery'),
+      ),
+    );
+
     showCupertinoModalPopup(
       context: context,
       builder: (context) => CupertinoActionSheet(
         title: const Text('Add Image'),
-        actions: [
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              _getImage(ImageSource.camera);
-            },
-            child: const Text('Take Photo'),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              _getImage(ImageSource.gallery);
-            },
-            child: const Text('Choose from Gallery'),
-          ),
-        ],
+        actions: actions,
         cancelButton: CupertinoActionSheetAction(
           onPressed: () => Navigator.pop(context),
           child: const Text('Cancel'),
@@ -192,23 +223,52 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   }
 
   Future<void> _getImage(ImageSource source) async {
-    final XFile? image = await _picker.pickImage(source: source);
-    if (image != null) {
-      final directory = await getApplicationDocumentsDirectory();
-      final String fileName = 'note_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final String newPath = '${directory.path}/$fileName';
-      await File(image.path).copy(newPath);
-      
-      setState(() {
-        _imagePaths.add(newPath);
-        _hasUnsavedChanges = true;
-      });
+    try {
+      final XFile? image = await _picker.pickImage(source: source);
+      if (image != null) {
+        final directory = await getApplicationDocumentsDirectory();
+        final String fileName = 'note_image_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final String newPath = '${directory.path}/$fileName';
+        await File(image.path).copy(newPath);
+        
+        _insertImageAtCursor(newPath);
+      }
+    } catch (e) {
+      if (mounted) {
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to pick image: ${e.toString()}'),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('OK'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 
-  void _removeImage(int index) {
+  void _insertImageAtCursor(String imagePath) {
+    final text = _contentController.text;
+    final selection = _contentController.selection;
+    
+    int cursorPosition = selection.baseOffset;
+    if (cursorPosition < 0 || cursorPosition > text.length) {
+      cursorPosition = text.length;
+    }
+    
+    final imageTag = '[IMAGE:$imagePath]\n';
+    final newText = text.replaceRange(cursorPosition, cursorPosition, imageTag);
+    
     setState(() {
-      _imagePaths.removeAt(index);
+      _contentController.text = newText;
+      _contentController.selection = TextSelection.collapsed(
+        offset: cursorPosition + imageTag.length,
+      );
       _hasUnsavedChanges = true;
     });
   }
@@ -242,7 +302,6 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
             _buildTitleField(),
             _buildContentSearchBar(),
             _buildContentSection(),
-            _buildImagesSection(),
             _buildActionButtons(),
             _buildStatusIndicator(),
           ],
@@ -353,112 +412,29 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     return Expanded(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-        child: _buildContentField(),
-      ),
-    );
-  }
-
-  Widget _buildContentField() {
-  // If we have a search query, show highlighted text overlay
-  if (_showContentSearch && _contentSearchController.text.isNotEmpty && _contentController.text.isNotEmpty) {
-    return Stack(
-      children: [
-        // Invisible text field for editing
-        CupertinoTextField(
+        child: RichTextEditor(
+          key: _editorKey, // This key allows us to access the editor's state
           controller: _contentController,
-          placeholder: 'Start typing your note...',
-          maxLines: null,
-          expands: true,
-          textAlignVertical: TextAlignVertical.top,
-          style: const TextStyle(fontSize: 16, color: Colors.transparent),
-          decoration: BoxDecoration(
-            color: CupertinoColors.systemBackground.resolveFrom(context),
-          ),
-          padding: const EdgeInsets.all(8),
+          focusNode: _contentFocusNode,
+          searchQuery: _showContentSearch ? _contentSearchController.text : '',
+          onImageRemove: (imagePath) {
+            setState(() {
+              var text = _contentController.text;
+              text = text
+                  .replaceAll('[IMAGE:$imagePath]\n', '')
+                  .replaceAll('[IMAGE:$imagePath]', '');
+              
+              // Also update metadata after removing image
+              final editorState = _editorKey.currentState;
+              if (editorState != null && editorState is ImageMetadataProvider) {
+                text = (editorState as ImageMetadataProvider).saveImageMetadata(text);
+              }
+              
+              _contentController.text = text;
+              _hasUnsavedChanges = true;
+            });
+          },
         ),
-        // Highlighted text overlay (non-editable)
-        Positioned.fill(
-          child: IgnorePointer(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: SingleChildScrollView(
-                child: HighlightedText(
-                  text: _contentController.text,
-                  searchQuery: _contentSearchController.text,
-                  textStyle: const TextStyle(fontSize: 16),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-  
-  // Normal text field when not searching
-  return CupertinoTextField(
-    controller: _contentController,
-    placeholder: 'Start typing your note...',
-    maxLines: null,
-    expands: true,
-    textAlignVertical: TextAlignVertical.top,
-    style: const TextStyle(fontSize: 16),
-    decoration: BoxDecoration(
-      color: CupertinoColors.systemBackground.resolveFrom(context),
-    ),
-    padding: const EdgeInsets.all(8),
-  );
-}
-
-  Widget _buildImagesSection() {
-    if (_imagePaths.isEmpty) return const SizedBox.shrink();
-    
-    return Container(
-      height: 120,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: _imagePaths.length,
-        itemBuilder: (context, index) => _buildImageThumbnail(index),
-      ),
-    );
-  }
-
-  Widget _buildImageThumbnail(int index) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.file(
-              File(_imagePaths[index]),
-              height: 100,
-              width: 100,
-              fit: BoxFit.cover,
-            ),
-          ),
-          Positioned(
-            top: 4,
-            right: 4,
-            child: CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: () => _removeImage(index),
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: CupertinoColors.destructiveRed,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  CupertinoIcons.xmark,
-                  color: CupertinoColors.white,
-                  size: 12,
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
