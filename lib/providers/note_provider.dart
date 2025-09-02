@@ -36,13 +36,6 @@ class NoteProvider with ChangeNotifier {
     final query = _searchQuery.toLowerCase();
     return _notes.where((note) {
       final titleMatch = note.title.toLowerCase().contains(query);
-      final cleanContent = note.content
-        .replaceAll(RegExp(r'\[IMAGE:[^\]]+\]\n?'), '')
-        .replaceAll(RegExp(r'\[IMAGE_META:[^\]]+\]\n?'), '')
-        .replaceAll(RegExp(r'\[AUDIO:[^\]]+\]\n?'), '')
-        .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '')
-        .replaceAll(RegExp(r'\[TODO_META:[^\]]+\]\n?'), '')
-        .toLowerCase();
       final contentMatch = note.content.toLowerCase().contains(query);
       final dateMatch = DateFormat.yMMMd().format(note.createdAt).toLowerCase().contains(query);
       final tagsMatch = note.tags.any((tag) => 

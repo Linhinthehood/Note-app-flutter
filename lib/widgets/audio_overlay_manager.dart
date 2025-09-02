@@ -124,7 +124,7 @@ class AudioOverlayManager {
       final metadataString = utf8.decode(decodedBytes);
       final metadata = jsonDecode(metadataString) as Map<String, dynamic>;
       
-      print('Loading audio metadata: $metadata'); // Debug log
+      
       
       if (metadata.containsKey('positions')) {
         final positions = metadata['positions'] as Map<String, dynamic>;
@@ -188,7 +188,7 @@ class AudioOverlayManager {
     final metadataString = jsonEncode(metadata);
     final encodedMetadata = base64Encode(utf8.encode(metadataString));
     
-    print('Saving audio metadata: $metadata'); // Debug log
+   
     
     // Add metadata at the end, ensuring clean format
     final cleanText = text.trim();
@@ -209,7 +209,7 @@ class AudioOverlayManager {
       final RegExp audioRegex = RegExp(r'\[AUDIO:([^\]]+)\]');
       final matches = audioRegex.allMatches(text);
       
-      print('Initializing audio from text, found ${matches.length} audio files'); // Debug log
+     
       
       // Load saved metadata first
       _loadAudioMetadata(text);
@@ -227,10 +227,8 @@ class AudioOverlayManager {
               position: Offset(20, 100 + (index * 120.0)),
             );
             _audioItems.add(audioItem);
-            print('Added new audio item at position: ${audioItem.position}'); // Debug log
-          } else {
-            print('Audio item already exists from metadata: $audioPath'); // Debug log
-          }
+            
+          } 
           index++;
         }
       }
@@ -330,7 +328,7 @@ class AudioOverlayManager {
                     final index = _audioItems.indexWhere((item) => item.audioPath == audioPath);
                     if (index != -1) {
                       _audioItems[index].position = newPosition;
-                      print('Updated audio position to: $newPosition'); // Debug log
+                      
                     }
                     
                     _dragAnchorPoint = null;

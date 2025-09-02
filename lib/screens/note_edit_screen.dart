@@ -702,51 +702,9 @@ void _showMoreOptions() {
   );
 }
 
-  Widget _buildActionButtons() {
-  return Container(
-    padding: const EdgeInsets.all(16),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildActionButton(
-          icon: CupertinoIcons.camera,
-          label: 'Image',
-          onPressed: _pickImage,
-        ),
-        _buildActionButton(
-          icon: CupertinoIcons.music_note, // Add this button
-          label: 'Audio',
-          onPressed: _pickAudio,
-        ),
-        _buildActionButton(
-          icon: CupertinoIcons.add_circled,
-          label: 'New Note',
-          onPressed: () => Navigator.of(context).push(
-            CupertinoPageRoute(builder: (context) => const NoteEditScreen()),
-          ),
-        ),
-      ],
-    ),
-  );
-}
 
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return CupertinoButton(
-      onPressed: onPressed,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(fontSize: 12)),
-        ],
-      ),
-    );
-  }
+
+
 
   Widget _buildStatusIndicator() {
   return Container(
