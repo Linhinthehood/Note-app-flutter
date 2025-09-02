@@ -32,6 +32,8 @@ class _NoteEditScreenState extends State<NoteEditScreen> with WidgetsBindingObse
   Note? _currentNote;
   List<String> _imagePaths = [];
   List<String> _audioPaths = [];
+  List<String> _tags = [];
+  final TextEditingController _tagController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   
   // Key to access the RichTextEditor's functionality
@@ -46,6 +48,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> with WidgetsBindingObse
       _contentController.text = widget.note!.content;
       _imagePaths = List.from(widget.note!.imagePaths);
       _audioPaths = List.from(widget.note!.audioPaths);
+      _tags = List.from(widget.note!.tags);
     }
     
     _titleController.addListener(_onTextChanged);
@@ -66,10 +69,11 @@ class _NoteEditScreenState extends State<NoteEditScreen> with WidgetsBindingObse
   
   // Clean the text from metadata tags before searching
   final cleanText = _contentController.text
-      .replaceAll(RegExp(r'\[IMAGE:[^\]]+\]\n?'), '') // Remove image tags
-      .replaceAll(RegExp(r'\[AUDIO:[^\]]+\]\n?'), '') // Remove audio tags
-      .replaceAll(RegExp(r'\[IMAGE_META:[^\]]+\]\n?'), '') // Remove image metadata
-      .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '') // Remove audio metadata
+        .replaceAll(RegExp(r'\[IMAGE:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[IMAGE_META:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[AUDIO:[^\]]+\]\n?'), '') // Add this
+        .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[TODO_META:[^\]]+\]\n?'), '')
       .toLowerCase();
   
   final query = _contentSearchController.text.toLowerCase();
@@ -177,6 +181,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> with WidgetsBindingObse
         isPinned: false,
         imagePaths: _imagePaths,
         audioPaths: _audioPaths,
+        tags: _tags,
       );
       await noteProvider.addNoteWithMedia(newNote);
       await noteProvider.fetchNotes();
@@ -193,6 +198,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> with WidgetsBindingObse
         isPinned: _currentNote!.isPinned,
         imagePaths: _imagePaths,
         audioPaths: _audioPaths,
+        tags: _tags,
       );
       await noteProvider.updateNote(updatedNote);
       _currentNote = updatedNote;
@@ -315,6 +321,25 @@ class _NoteEditScreenState extends State<NoteEditScreen> with WidgetsBindingObse
     }
   }
 }
+
+      void _addTag() {
+        final tag = _tagController.text.trim();
+        if (tag.isNotEmpty && !_tags.contains(tag)) {
+          setState(() {
+            _tags.add(tag);
+            _tagController.clear();
+            _hasUnsavedChanges = true;
+          });
+        }
+      }
+
+      void _removeTag(String tag) {
+        setState(() {
+          _tags.remove(tag);
+          _hasUnsavedChanges = true;
+        });
+      }
+
   void _insertAudioAtCursor(String audioPath) {
     final text = _contentController.text;
     final selection = _contentController.selection;
@@ -383,6 +408,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> with WidgetsBindingObse
         child: Column(
           children: [
             _buildTitleField(),
+            _buildTagsSection(),
             _buildContentSearchBar(),
             _buildContentSection(), // This will now be expanded
             _buildStatusIndicator(),
@@ -438,6 +464,68 @@ Widget _buildNewNoteButton() {
     child: const Icon(
       CupertinoIcons.add_circled,
       color: CupertinoColors.activeBlue,
+    ),
+  );
+}
+Widget _buildTagsSection() {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: CupertinoTextField(
+                controller: _tagController,
+                placeholder: 'Add tag...',
+                onSubmitted: (_) => _addTag(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: _addTag,
+              child: const Icon(CupertinoIcons.add),
+            ),
+          ],
+        ),
+        if (_tags.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: _tags.map((tag) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: CupertinoColors.activeBlue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '#$tag',
+                    style: const TextStyle(
+                      color: CupertinoColors.activeBlue,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: () => _removeTag(tag),
+                    child: const Icon(
+                      CupertinoIcons.xmark,
+                      size: 12,
+                      color: CupertinoColors.activeBlue,
+                    ),
+                  ),
+                ],
+              ),
+            )).toList(),
+          ),
+        ],
+      ],
     ),
   );
 }

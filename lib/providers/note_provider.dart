@@ -36,10 +36,20 @@ class NoteProvider with ChangeNotifier {
     final query = _searchQuery.toLowerCase();
     return _notes.where((note) {
       final titleMatch = note.title.toLowerCase().contains(query);
+      final cleanContent = note.content
+        .replaceAll(RegExp(r'\[IMAGE:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[IMAGE_META:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[AUDIO:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[TODO_META:[^\]]+\]\n?'), '')
+        .toLowerCase();
       final contentMatch = note.content.toLowerCase().contains(query);
       final dateMatch = DateFormat.yMMMd().format(note.createdAt).toLowerCase().contains(query);
-      
-      return titleMatch || contentMatch || dateMatch;
+      final tagsMatch = note.tags.any((tag) => 
+        tag.toLowerCase().contains(query) || 
+        '#${tag.toLowerCase()}'.contains(query)
+    );
+      return titleMatch || contentMatch || dateMatch || tagsMatch;
     }).toList();
   }
 
@@ -112,6 +122,9 @@ class NoteProvider with ChangeNotifier {
       content: note.content,
       createdAt: note.createdAt,
       isPinned: !note.isPinned,
+      imagePaths: note.imagePaths, // Add this
+      audioPaths: note.audioPaths,  // Add this
+      tags: note.tags,
     );
     await updateNote(updatedNote);
   }

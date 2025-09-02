@@ -18,10 +18,11 @@ class HighlightedText extends StatelessWidget {
   String _cleanText(String text) {
     // Remove all image and audio tags and metadata
     return text
-        .replaceAll(RegExp(r'\[IMAGE:[^\]]+\]\n?'), '') // Remove image tags
-        .replaceAll(RegExp(r'\[AUDIO:[^\]]+\]\n?'), '') // Remove audio tags
-        .replaceAll(RegExp(r'\[IMAGE_META:[^\]]+\]\n?'), '') // Remove image metadata
-        .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '') // Remove audio metadata
+        .replaceAll(RegExp(r'\[IMAGE:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[IMAGE_META:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[AUDIO:[^\]]+\]\n?'), '') // Add this
+        .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[TODO_META:[^\]]+\]\n?'), '')
         .trim(); // Remove extra whitespace
   }
 

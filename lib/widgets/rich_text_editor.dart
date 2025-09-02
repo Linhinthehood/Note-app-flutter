@@ -117,7 +117,6 @@ class _RichTextEditorState extends State<RichTextEditor>
         .replaceAll(RegExp(r'\[IMAGE_META:[^\]]+\]\n?'), '')
         .replaceAll(RegExp(r'\[AUDIO:[^\]]+\]\n?'), '') // Add this
         .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '')
-        .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '')
         .replaceAll(RegExp(r'\[TODO_META:[^\]]+\]\n?'), '')
         .trim();
         // Add this

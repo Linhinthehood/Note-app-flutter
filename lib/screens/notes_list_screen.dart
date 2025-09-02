@@ -1,4 +1,5 @@
 // lib/screens/notes_list_screen.dart
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -57,58 +58,60 @@ class NotesListScreen extends StatelessWidget {
       ),
     );
   }
-  Widget _buildNotesList(BuildContext context, NoteProvider noteProvider) {
-  if (noteProvider.notes.isEmpty) {
-    return Center(
-      child: Text(
-        noteProvider.searchQuery.isEmpty 
-            ? 'No notes yet. Add one!'
-            : 'No notes found for "${noteProvider.searchQuery}"',
-        style: TextStyle(
-          fontSize: 16,
-          color: CupertinoColors.secondaryLabel.resolveFrom(context),
-        ),
-      ),
-    );
-  }
 
-  // If searching, show simple list without grouping
-  if (noteProvider.searchQuery.isNotEmpty) {
+  Widget _buildNotesList(BuildContext context, NoteProvider noteProvider) {
+    if (noteProvider.notes.isEmpty) {
+      return Center(
+        child: Text(
+          noteProvider.searchQuery.isEmpty 
+              ? 'No notes yet. Add one!'
+              : 'No notes found for "${noteProvider.searchQuery}"',
+          style: TextStyle(
+            fontSize: 16,
+            color: CupertinoColors.secondaryLabel.resolveFrom(context),
+          ),
+        ),
+      );
+    }
+
+    // If searching, show simple list without grouping
+    if (noteProvider.searchQuery.isNotEmpty) {
+      return ListView.builder(
+        padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+        itemCount: noteProvider.notes.length,
+        itemBuilder: (context, index) {
+          final note = noteProvider.notes[index];
+          return Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: _buildNoteCard(context, noteProvider, note),
+          );
+        },
+      );
+    }
+
+    // Normal grouped view when not searching
+    final groupedNotes = noteProvider.groupedNotes;
+    final monthKeys = groupedNotes.keys.toList();
+
+    monthKeys.sort((a, b) {
+      if (a == 'PINNED' && b != 'PINNED') return -1;
+      if (a != 'PINNED' && b == 'PINNED') return 1;
+      if (a == 'PINNED' && b == 'PINNED') return 0;
+
+      DateTime dateA = DateFormat('MMM yyyy').parse(a);
+      DateTime dateB = DateFormat('MMM yyyy').parse(b);
+      return dateB.compareTo(dateA);
+    });
+
     return ListView.builder(
       padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
-      itemCount: noteProvider.notes.length,
+      itemCount: _calculateTotalItems(noteProvider, monthKeys),
       itemBuilder: (context, index) {
-        final note = noteProvider.notes[index];
-        return Padding(
-          padding: EdgeInsets.only(bottom: 12),
-          child: _buildNoteCard(context, noteProvider, note),
-        );
+        return _buildItem(context, noteProvider, monthKeys, index);
       },
     );
   }
 
-  // Normal grouped view when not searching
-  final groupedNotes = noteProvider.groupedNotes;
-  final monthKeys = groupedNotes.keys.toList();
-
-  monthKeys.sort((a, b) {
-    if (a == 'PINNED' && b != 'PINNED') return -1;
-    if (a != 'PINNED' && b == 'PINNED') return 1;
-    if (a == 'PINNED' && b == 'PINNED') return 0;
-
-    DateTime dateA = DateFormat('MMM yyyy').parse(a);
-    DateTime dateB = DateFormat('MMM yyyy').parse(b);
-    return dateB.compareTo(dateA);
-  });
-
-  return ListView.builder(
-    padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
-    itemCount: _calculateTotalItems(noteProvider, monthKeys),
-    itemBuilder: (context, index) {
-      return _buildItem(context, noteProvider, monthKeys, index);
-    },
-  );
-}
   int _calculateTotalItems(NoteProvider noteProvider, List<String> monthKeys) {
     int totalItems = 0;
     for (String monthKey in monthKeys) {
@@ -208,8 +211,94 @@ class NotesListScreen extends StatelessWidget {
     );
   }
 
+  // Helper method to clean content from metadata tags
+  String _getCleanContent(String content) {
+    return content
+        .replaceAll(RegExp(r'\[IMAGE:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[IMAGE_META:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[AUDIO:[^\]]+\]\n?'), '') // Add this
+        .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[TODO_META:[^\]]+\]\n?'), '')
+        .trim();
+  }
+
+  // Helper method to get first media preview
+  Widget? _getMediaPreview(Note note) {
+    // Check for images first
+    if (note.imagePaths.isNotEmpty) {
+      final imagePath = note.imagePaths.first;
+      return Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(6),
+          color: CupertinoColors.systemGrey5,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: Image.file(
+            File(imagePath),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => const Icon(
+              CupertinoIcons.photo,
+              size: 20,
+              color: CupertinoColors.systemGrey2,
+            ),
+          ),
+        ),
+      );
+    }
+    
+    // Check for audio files
+    if (note.audioPaths.isNotEmpty) {
+      return Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(6),
+          color: CupertinoColors.activeBlue.withOpacity(0.1),
+        ),
+        child: const Icon(
+          CupertinoIcons.music_note,
+          size: 20,
+          color: CupertinoColors.activeBlue,
+        ),
+      );
+    }
+    
+    return null;
+  }
+
+  // Helper method to build tags
+  Widget _buildTags(List<String> tags) {
+    if (tags.isEmpty) return const SizedBox.shrink();
+    
+    return Wrap(
+      spacing: 6,
+      runSpacing: 4,
+      children: tags.take(3).map((tag) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: CupertinoColors.activeBlue.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          '#$tag',
+          style: const TextStyle(
+            fontSize: 12,
+            color: CupertinoColors.activeBlue,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      )).toList(),
+    );
+  }
+
   Widget _buildNoteCard(
       BuildContext context, NoteProvider noteProvider, Note note) {
+    final cleanContent = _getCleanContent(note.content);
+    final mediaPreview = _getMediaPreview(note);
+    
     return Dismissible(
       key: Key(note.id.toString()),
       background: Container(
@@ -315,32 +404,64 @@ class NotesListScreen extends StatelessWidget {
             ),
           ],
         ),
-        child: CupertinoListTile(
+        child: CupertinoButton(
           padding: const EdgeInsets.all(20),
-          title: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Text(
-              note.title,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: CupertinoColors.label.resolveFrom(context),
-              ),
-            ),
-          ),
-          subtitle: Column(
+          onPressed: () {
+            Navigator.of(context).push(CupertinoPageRoute(
+              builder: (context) => NoteEditScreen(note: note),
+            ));
+          },
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                note.content,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: CupertinoColors.label.resolveFrom(context),
-                ),
+              // Title and Tags Row
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          note.title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: CupertinoColors.label.resolveFrom(context),
+                          ),
+                        ),
+                        if (note.tags.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          _buildTags(note.tags),
+                        ],
+                      ],
+                    ),
+                  ),
+                  // Media preview on the right
+                  if (mediaPreview != null) ...[
+                    const SizedBox(width: 12),
+                    mediaPreview,
+                  ],
+                ],
               ),
+              
               const SizedBox(height: 8),
+              
+              // Content preview
+              if (cleanContent.isNotEmpty)
+                Text(
+                  cleanContent,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: CupertinoColors.label.resolveFrom(context),
+                  ),
+                ),
+              
+              const SizedBox(height: 8),
+              
+              // Date
               Text(
                 DateFormat.yMMMd().format(note.createdAt),
                 style: TextStyle(
@@ -351,11 +472,6 @@ class NotesListScreen extends StatelessWidget {
               ),
             ],
           ),
-          onTap: () {
-            Navigator.of(context).push(CupertinoPageRoute(
-              builder: (context) => NoteEditScreen(note: note),
-            ));
-          },
         ),
       ),
     );
