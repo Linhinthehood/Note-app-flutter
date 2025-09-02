@@ -4,13 +4,17 @@ import 'package:flutter/material.dart';
 import 'image_overlay_manager.dart';
 import 'audio_overlay_manager.dart'; // Add this import
 import 'highlighted_text.dart';
-
+import 'todo_overlay_manager.dart';
+import 'todo_creation_dialog.dart';
 mixin ImageMetadataProvider {
   String saveImageMetadata(String text);
 }
 
 mixin AudioMetadataProvider {
   String saveAudioMetadata(String text);
+}
+mixin TodoMetadataProvider {
+  String saveTodoMetadata(String text);
 }
 
 class RichTextEditor extends StatefulWidget {
@@ -37,13 +41,13 @@ class RichTextEditor extends StatefulWidget {
 }
 
 class _RichTextEditorState extends State<RichTextEditor> 
-  with ImageMetadataProvider, AudioMetadataProvider {
+  with ImageMetadataProvider, AudioMetadataProvider, TodoMetadataProvider {
   final ScrollController _scrollController = ScrollController();
   late TextEditingController _displayController;
   String _lastControllerText = '';
   late ImageOverlayManager _imageManager;
   late AudioOverlayManager _audioManager; // Add this
-
+  late TodoOverlayManager _todoManager;
   @override
   void initState() {
     super.initState();
@@ -65,6 +69,12 @@ class _RichTextEditorState extends State<RichTextEditor>
     _updateDisplayController();
     _imageManager.initializeFromText(widget.controller.text);
     _audioManager.initializeFromText(widget.controller.text); // Add this
+
+     _todoManager = TodoOverlayManager(
+        onStateChanged: () => setState(() {}),
+        onMetadataChanged: _saveMetadataToController,
+      );
+     _todoManager.initializeFromText(widget.controller.text);
   }
 
   @override
@@ -74,6 +84,7 @@ class _RichTextEditorState extends State<RichTextEditor>
     _scrollController.dispose();
     _imageManager.dispose();
     _audioManager.dispose(); // Add this
+    _todoManager.dispose();
     super.dispose();
   }
 
@@ -81,7 +92,7 @@ class _RichTextEditorState extends State<RichTextEditor>
       final currentText = widget.controller.text;
       String updatedText = _imageManager.saveImageMetadata(currentText);
       updatedText = _audioManager.saveAudioMetadata(updatedText); // Make sure this is called
-      
+      updatedText = _todoManager.saveTodoMetadata(updatedText);
       if (currentText != updatedText) {
         widget.controller.removeListener(_onControllerChange);
         widget.controller.text = updatedText;
@@ -95,6 +106,7 @@ class _RichTextEditorState extends State<RichTextEditor>
       _updateDisplayController();
       _imageManager.initializeFromText(widget.controller.text);
       _audioManager.initializeFromText(widget.controller.text); // Add this
+      _todoManager.initializeFromText(widget.controller.text); 
       _lastControllerText = widget.controller.text;
     }
   }
@@ -104,7 +116,11 @@ class _RichTextEditorState extends State<RichTextEditor>
         .replaceAll(RegExp(r'\[IMAGE:[^\]]+\]\n?'), '')
         .replaceAll(RegExp(r'\[IMAGE_META:[^\]]+\]\n?'), '')
         .replaceAll(RegExp(r'\[AUDIO:[^\]]+\]\n?'), '') // Add this
-        .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), ''); // Add this
+        .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '')
+        .replaceAll(RegExp(r'\[TODO_META:[^\]]+\]\n?'), '')
+        .trim();
+        // Add this
     
     if (_displayController.text != cleanText) {
       final selection = _displayController.selection;
@@ -121,6 +137,7 @@ class _RichTextEditorState extends State<RichTextEditor>
   void _onDisplayTextChanged(String value) {
     final RegExp imageRegex = RegExp(r'\[IMAGE:([^\]]+)\]');
     final RegExp audioRegex = RegExp(r'\[AUDIO:([^\]]+)\]'); // Add this
+    final RegExp todoMetaRegex = RegExp(r'\[TODO_META:[^\]]+\]');
     
     final existingImages = imageRegex.allMatches(widget.controller.text)
         .map((match) => match.group(0)!)
@@ -129,7 +146,11 @@ class _RichTextEditorState extends State<RichTextEditor>
     final existingAudios = audioRegex.allMatches(widget.controller.text) // Add this
         .map((match) => match.group(0)!)
         .toList();
-    
+
+    final existingTodoMeta = todoMetaRegex.allMatches(widget.controller.text) // Add this
+        .map((match) => match.group(0)!)
+        .toList();
+
     String newText = value;
     for (String imageTag in existingImages) {
       newText += '\n$imageTag';
@@ -137,6 +158,10 @@ class _RichTextEditorState extends State<RichTextEditor>
     for (String audioTag in existingAudios) { // Add this
       newText += '\n$audioTag';
     }
+    for (String todoMeta in existingTodoMeta) { // Add this
+      newText += '\n$todoMeta';
+    }
+
     
     _lastControllerText = newText;
     widget.controller.text = newText;
@@ -145,8 +170,12 @@ class _RichTextEditorState extends State<RichTextEditor>
   void _handleTapOutside() {
     _imageManager.deselectAll();
     _audioManager.deselectAll(); // Add this
+    _todoManager.deselectAll();
   }
-
+  @override
+  String saveTodoMetadata(String text) {
+    return _todoManager.saveTodoMetadata(text);
+  }
   @override
   String saveImageMetadata(String text) {
     return _imageManager.saveImageMetadata(text);
@@ -161,7 +190,7 @@ class _RichTextEditorState extends State<RichTextEditor>
   void addAudio(String audioPath) {
     _audioManager.addAudio(audioPath);
   }
-
+  
   @override
 Widget build(BuildContext context) {
   return Container(
@@ -176,9 +205,26 @@ Widget build(BuildContext context) {
       builder: (context, constraints) {
         _imageManager.updateContainerSize(Size(constraints.maxWidth, constraints.maxHeight));
         _audioManager.updateContainerSize(Size(constraints.maxWidth, constraints.maxHeight));
-        
+        _todoManager.updateContainerSize(Size(constraints.maxWidth, constraints.maxHeight)); // Add this line
+
         return GestureDetector(
           onTap: _handleTapOutside,
+          onDoubleTap: () {
+            // Show todo creation dialog
+            showCupertinoDialog(
+              context: context,
+              builder: (context) => TodoCreationDialog(
+                onCreateTodo: (content) {
+                  // Add todo at center of screen
+                  final position = Offset(
+                    constraints.maxWidth / 2 - 100,
+                    constraints.maxHeight / 2 - 50,
+                  );
+                  _todoManager.addTodo(content, position);
+                },
+              ),
+            );
+          },
           child: SingleChildScrollView(
             controller: _scrollController,
             child: Container(
@@ -250,6 +296,8 @@ Widget build(BuildContext context) {
                   
                   // Audio players positioned within the scrollable content
                   ..._audioManager.buildAudioOverlays(context, widget.controller.text),
+
+                  ..._todoManager.buildTodoOverlays(context), 
                 ],
               ),
             ),

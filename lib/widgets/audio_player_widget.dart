@@ -41,7 +41,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
   DateTime? _dateAdded;
   int _fileSize = 0;
   String _fileExtension = '';
-  bool _isDragging = false;
+ 
 
 
   @override
