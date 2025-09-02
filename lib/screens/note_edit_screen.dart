@@ -8,7 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/note.dart';
 import '../providers/note_provider.dart';
-
+import 'package:file_picker/file_picker.dart';
 import '../widgets/rich_text_editor.dart';
 
 class NoteEditScreen extends StatefulWidget {
@@ -19,7 +19,7 @@ class NoteEditScreen extends StatefulWidget {
   State<NoteEditScreen> createState() => _NoteEditScreenState();
 }
 
-class _NoteEditScreenState extends State<NoteEditScreen> {
+class _NoteEditScreenState extends State<NoteEditScreen> with WidgetsBindingObserver {
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
   final _contentSearchController = TextEditingController();
@@ -31,6 +31,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   bool _showContentSearch = false;
   Note? _currentNote;
   List<String> _imagePaths = [];
+  List<String> _audioPaths = [];
   final ImagePicker _picker = ImagePicker();
   
   // Key to access the RichTextEditor's functionality
@@ -44,6 +45,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       _titleController.text = widget.note!.title;
       _contentController.text = widget.note!.content;
       _imagePaths = List.from(widget.note!.imagePaths);
+      _audioPaths = List.from(widget.note!.audioPaths);
     }
     
     _titleController.addListener(_onTextChanged);
@@ -54,25 +56,33 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         _saveNote();
       }
     });
+    WidgetsBinding.instance.addObserver(this);
   }
 
   int _getMatchCount() {
-    if (_contentSearchController.text.isEmpty || _contentController.text.isEmpty) {
-      return 0;
-    }
-    
-    final text = _contentController.text.toLowerCase();
-    final query = _contentSearchController.text.toLowerCase();
-    int count = 0;
-    int index = text.indexOf(query);
-    
-    while (index != -1) {
-      count++;
-      index = text.indexOf(query, index + 1);
-    }
-    
-    return count;
+  if (_contentSearchController.text.isEmpty || _contentController.text.isEmpty) {
+    return 0;
   }
+  
+  // Clean the text from metadata tags before searching
+  final cleanText = _contentController.text
+      .replaceAll(RegExp(r'\[IMAGE:[^\]]+\]\n?'), '') // Remove image tags
+      .replaceAll(RegExp(r'\[AUDIO:[^\]]+\]\n?'), '') // Remove audio tags
+      .replaceAll(RegExp(r'\[IMAGE_META:[^\]]+\]\n?'), '') // Remove image metadata
+      .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '') // Remove audio metadata
+      .toLowerCase();
+  
+  final query = _contentSearchController.text.toLowerCase();
+  int count = 0;
+  int index = cleanText.indexOf(query);
+  
+  while (index != -1) {
+    count++;
+    index = cleanText.indexOf(query, index + 1);
+  }
+  
+  return count;
+}
 
   @override
   void dispose() {
@@ -90,9 +100,18 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     }
     
     super.dispose();
+    WidgetsBinding.instance.removeObserver(this);
   }
 
-
+  @override
+    void didChangeAppLifecycleState(AppLifecycleState state) {
+      super.didChangeAppLifecycleState(state);
+      if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+        if (_hasUnsavedChanges) {
+          _saveNote();
+        }
+      }
+    }
 
   void _onTextChanged() {
     if (!_hasUnsavedChanges) {
@@ -108,79 +127,92 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   }
 
   Future<void> _saveNote() async {
-    if (_isSaving) return;
-    
-    final title = _titleController.text.trim();
-    var content = _contentController.text.trim();
-    
-    // Save image metadata before processing content
-    final editorState = _editorKey.currentState;
-    if (editorState != null && editorState is ImageMetadataProvider) {
+  if (_isSaving) return;
+  
+  final title = _titleController.text.trim();
+  var content = _contentController.text.trim();
+  
+  // Save BOTH image and audio metadata before processing content
+  final editorState = _editorKey.currentState;
+  if (editorState != null) {
+    if (editorState is ImageMetadataProvider) {
       content = (editorState as ImageMetadataProvider).saveImageMetadata(content);
     }
-    
-    // Extract image paths from content
-    final imagePattern = RegExp(r'\[IMAGE:([^\]]+)\]');
-    final matches = imagePattern.allMatches(content);
-    _imagePaths = matches.map((match) => match.group(1)!).toList();
-    
-    if (title.isEmpty && content.isEmpty && _imagePaths.isEmpty) {
-      setState(() {
-        _hasUnsavedChanges = false;
-      });
-      return;
-    }
-
-    setState(() {
-      _isSaving = true;
-    });
-
-    final finalTitle = title.isEmpty ? 'Untitled Note' : title;
-
-    try {
-      final noteProvider = Provider.of<NoteProvider>(context, listen: false);
-
-      if (_currentNote == null) {
-        Note newNote = Note(
-          title: finalTitle,
-          content: content, // This now includes image metadata
-          createdAt: DateTime.now(),
-          isPinned: false,
-          imagePaths: _imagePaths,
-        );
-        await noteProvider.addNoteWithMedia(newNote);
-        await noteProvider.fetchNotes();
-        _currentNote = noteProvider.notes.firstWhere(
-          (note) => note.title == finalTitle && note.content == content,
-          orElse: () => newNote,
-        );
-      } else {
-        Note updatedNote = Note(
-          id: _currentNote!.id,
-          title: finalTitle,
-          content: content, // This now includes image metadata
-          createdAt: _currentNote!.createdAt,
-          isPinned: _currentNote!.isPinned,
-          imagePaths: _imagePaths,
-        );
-        await noteProvider.updateNote(updatedNote);
-        _currentNote = updatedNote;
-      }
-
-      if (mounted) {
-        setState(() {
-          _hasUnsavedChanges = false;
-          _isSaving = false;
-        });
-      }
-    } catch (error) {
-      if (mounted) {
-        setState(() {
-          _isSaving = false;
-        });
-      }
+    if (editorState is AudioMetadataProvider) {
+      content = (editorState as AudioMetadataProvider).saveAudioMetadata(content);
     }
   }
+  
+  // Extract image paths from content
+  final imagePattern = RegExp(r'\[IMAGE:([^\]]+)\]');
+  final imageMatches = imagePattern.allMatches(content);
+  _imagePaths = imageMatches.map((match) => match.group(1)!).toList();
+  
+  // Extract audio paths from content
+  final audioPattern = RegExp(r'\[AUDIO:([^\]]+)\]');
+  final audioMatches = audioPattern.allMatches(content);
+  _audioPaths = audioMatches.map((match) => match.group(1)!).toList();
+  
+  if (title.isEmpty && content.isEmpty && _imagePaths.isEmpty && _audioPaths.isEmpty) {
+    setState(() {
+      _hasUnsavedChanges = false;
+    });
+    return;
+  }
+
+  setState(() {
+    _isSaving = true;
+  });
+
+  final finalTitle = title.isEmpty ? 'Untitled Note' : title;
+
+  try {
+    final noteProvider = Provider.of<NoteProvider>(context, listen: false);
+
+    if (_currentNote == null) {
+      Note newNote = Note(
+        title: finalTitle,
+        content: content, // This now includes both image and audio metadata
+        createdAt: DateTime.now(),
+        isPinned: false,
+        imagePaths: _imagePaths,
+        audioPaths: _audioPaths,
+      );
+      await noteProvider.addNoteWithMedia(newNote);
+      await noteProvider.fetchNotes();
+      _currentNote = noteProvider.notes.firstWhere(
+        (note) => note.title == finalTitle && note.content == content,
+        orElse: () => newNote,
+      );
+    } else {
+      Note updatedNote = Note(
+        id: _currentNote!.id,
+        title: finalTitle,
+        content: content, // This now includes both image and audio metadata
+        createdAt: _currentNote!.createdAt,
+        isPinned: _currentNote!.isPinned,
+        imagePaths: _imagePaths,
+        audioPaths: _audioPaths,
+      );
+      await noteProvider.updateNote(updatedNote);
+      _currentNote = updatedNote;
+    }
+
+    if (mounted) {
+      setState(() {
+        _hasUnsavedChanges = false;
+        _isSaving = false;
+      });
+    }
+  } catch (error) {
+    if (mounted) {
+      setState(() {
+        _isSaving = false;
+      });
+    }
+  }
+}
+ 
 
   Future<void> _pickImage() async {
     List<CupertinoActionSheetAction> actions = [];
@@ -249,7 +281,60 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       }
     }
   }
+  Future<void> _pickAudio() async {
+  try {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.audio,
+      allowMultiple: false,
+    );
 
+    if (result != null && result.files.single.path != null) {
+      final file = File(result.files.single.path!);
+      final directory = await getApplicationDocumentsDirectory();
+      final String fileName = 'note_audio_${DateTime.now().millisecondsSinceEpoch}.${result.files.single.extension ?? 'mp3'}';
+      final String newPath = '${directory.path}/$fileName';
+      await file.copy(newPath);
+      
+      _insertAudioAtCursor(newPath);
+    } // Add this closing brace
+  } catch (e) {
+    if (mounted) {
+      showCupertinoDialog(
+        context: context,
+        builder: (context) => CupertinoAlertDialog(
+          title: const Text('Error'),
+          content: Text('Failed to pick audio: ${e.toString()}'),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('OK'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+}
+  void _insertAudioAtCursor(String audioPath) {
+    final text = _contentController.text;
+    final selection = _contentController.selection;
+    
+    int cursorPosition = selection.baseOffset;
+    if (cursorPosition < 0 || cursorPosition > text.length) {
+      cursorPosition = text.length;
+    }
+    
+    final audioTag = '[AUDIO:$audioPath]\n';
+    final newText = text.replaceRange(cursorPosition, cursorPosition, audioTag);
+    
+    setState(() {
+      _contentController.text = newText;
+      _contentController.selection = TextSelection.collapsed(
+        offset: cursorPosition + audioTag.length,
+      );
+      _hasUnsavedChanges = true;
+    });
+  }
   void _insertImageAtCursor(String imagePath) {
     final text = _contentController.text;
     final selection = _contentController.selection;
@@ -299,8 +384,7 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
           children: [
             _buildTitleField(),
             _buildContentSearchBar(),
-            _buildContentSection(),
-            _buildActionButtons(),
+            _buildContentSection(), // This will now be expanded
             _buildStatusIndicator(),
           ],
         ),
@@ -320,7 +404,9 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildSearchButton(),
+          _buildMoreButton(), // Three-dot menu
           _buildSaveButton(),
+          _buildNewNoteButton(), // New Note button
         ],
       ),
     );
@@ -336,7 +422,83 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
       ),
     );
   }
-
+  Widget _buildMoreButton() {
+  return CupertinoButton(
+    padding: EdgeInsets.zero,
+    onPressed: _showMoreOptions,
+    child: const Icon(CupertinoIcons.ellipsis),
+  );
+}
+Widget _buildNewNoteButton() {
+  return CupertinoButton(
+    padding: const EdgeInsets.only(left: 8),
+    onPressed: () => Navigator.of(context).push(
+      CupertinoPageRoute(builder: (context) => const NoteEditScreen()),
+    ),
+    child: const Icon(
+      CupertinoIcons.add_circled,
+      color: CupertinoColors.activeBlue,
+    ),
+  );
+}
+void _showMoreOptions() {
+  showCupertinoModalPopup(
+    context: context,
+    builder: (context) => CupertinoActionSheet(
+      title: const Text('Add to Note'),
+      message: const Text('Choose what you want to add to your note'),
+      actions: [
+        CupertinoActionSheetAction(
+          onPressed: () {
+            Navigator.pop(context);
+            _pickImage();
+          },
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                CupertinoIcons.camera,
+                color: CupertinoColors.activeBlue,
+              ),
+              SizedBox(width: 12),
+              Text(
+                'Add Image',
+                style: TextStyle(color: CupertinoColors.activeBlue),
+              ),
+            ],
+          ),
+        ),
+        CupertinoActionSheetAction(
+          onPressed: () {
+            Navigator.pop(context);
+            _pickAudio();
+          },
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                CupertinoIcons.music_note,
+                color: CupertinoColors.activeBlue,
+              ),
+              SizedBox(width: 12),
+              Text(
+                'Add Audio',
+                style: TextStyle(color: CupertinoColors.activeBlue),
+              ),
+            ],
+          ),
+        ),
+      ],
+      cancelButton: CupertinoActionSheetAction(
+        onPressed: () => Navigator.pop(context),
+        child: const Text(
+          'Cancel',
+          style: TextStyle(color: CupertinoColors.destructiveRed),
+        ),
+      ),
+    ),
+  );
+}
   Widget _buildSaveButton() {
     return CupertinoButton(
       padding: EdgeInsets.zero,
@@ -406,59 +568,79 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
     );
   }
 
-  Widget _buildContentSection() {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-        child: RichTextEditor(
-          key: _editorKey, // This key allows us to access the editor's state
-          controller: _contentController,
-          focusNode: _contentFocusNode,
-          searchQuery: _showContentSearch ? _contentSearchController.text : '',
-          onImageRemove: (imagePath) {
-            setState(() {
-              var text = _contentController.text;
-              text = text
-                  .replaceAll('[IMAGE:$imagePath]\n', '')
-                  .replaceAll('[IMAGE:$imagePath]', '');
-              
-              // Also update metadata after removing image
-              final editorState = _editorKey.currentState;
-              if (editorState != null && editorState is ImageMetadataProvider) {
-                text = (editorState as ImageMetadataProvider).saveImageMetadata(text);
-              }
-              
-              _contentController.text = text;
-              _hasUnsavedChanges = true;
-            });
-          },
-        ),
+ Widget _buildContentSection() {
+  return Expanded( // This expands the content section to fill available space
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: RichTextEditor(
+        key: _editorKey,
+        controller: _contentController,
+        focusNode: _contentFocusNode,
+        searchQuery: _showContentSearch ? _contentSearchController.text : '',
+        onImageRemove: (imagePath) {
+          setState(() {
+            var text = _contentController.text;
+            text = text
+                .replaceAll('[IMAGE:$imagePath]\n', '')
+                .replaceAll('[IMAGE:$imagePath]', '');
+            
+            final editorState = _editorKey.currentState;
+            if (editorState != null && editorState is ImageMetadataProvider) {
+              text = (editorState as ImageMetadataProvider).saveImageMetadata(text);
+            }
+            
+            _contentController.text = text;
+            _hasUnsavedChanges = true;
+          });
+        },
+        onAudioRemove: (audioPath) {
+          setState(() {
+            var text = _contentController.text;
+            text = text
+                .replaceAll('[AUDIO:$audioPath]\n', '')
+                .replaceAll('[AUDIO:$audioPath]', '');
+            
+            final editorState = _editorKey.currentState;
+            if (editorState != null && editorState is AudioMetadataProvider) {
+              text = (editorState as AudioMetadataProvider).saveAudioMetadata(text);
+            }
+            
+            _contentController.text = text;
+            _hasUnsavedChanges = true;
+          });
+        },
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildActionButtons() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildActionButton(
-            icon: CupertinoIcons.camera,
-            label: 'Image',
-            onPressed: _pickImage,
+  return Container(
+    padding: const EdgeInsets.all(16),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildActionButton(
+          icon: CupertinoIcons.camera,
+          label: 'Image',
+          onPressed: _pickImage,
+        ),
+        _buildActionButton(
+          icon: CupertinoIcons.music_note, // Add this button
+          label: 'Audio',
+          onPressed: _pickAudio,
+        ),
+        _buildActionButton(
+          icon: CupertinoIcons.add_circled,
+          label: 'New Note',
+          onPressed: () => Navigator.of(context).push(
+            CupertinoPageRoute(builder: (context) => const NoteEditScreen()),
           ),
-          _buildActionButton(
-            icon: CupertinoIcons.add_circled,
-            label: 'New Note',
-            onPressed: () => Navigator.of(context).push(
-              CupertinoPageRoute(builder: (context) => const NoteEditScreen()),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _buildActionButton({
     required IconData icon,
@@ -479,32 +661,32 @@ class _NoteEditScreenState extends State<NoteEditScreen> {
   }
 
   Widget _buildStatusIndicator() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (_isSaving) ...[
-            const CupertinoActivityIndicator(),
-            const SizedBox(width: 8),
-            Text(
-              'Saving...',
-              style: TextStyle(
-                color: CupertinoColors.secondaryLabel.resolveFrom(context),
-                fontSize: 14,
-              ),
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (_isSaving) ...[
+          const CupertinoActivityIndicator(),
+          const SizedBox(width: 8),
+          Text(
+            'Saving...',
+            style: TextStyle(
+              color: CupertinoColors.secondaryLabel.resolveFrom(context),
+              fontSize: 14,
             ),
-          ] else if (_hasUnsavedChanges) ...[
-            const Icon(CupertinoIcons.circle_fill, size: 8, color: CupertinoColors.systemOrange),
-            const SizedBox(width: 8),
-            const Text('Unsaved changes', style: TextStyle(color: CupertinoColors.systemOrange, fontSize: 14)),
-          ] else if (_titleController.text.isNotEmpty || _contentController.text.isNotEmpty || _imagePaths.isNotEmpty) ...[
-            const Icon(CupertinoIcons.checkmark_circle_fill, size: 16, color: CupertinoColors.systemGreen),
-            const SizedBox(width: 8),
-            const Text('All changes saved', style: TextStyle(color: CupertinoColors.systemGreen, fontSize: 14)),
-          ],
+          ),
+        ] else if (_hasUnsavedChanges) ...[
+          const Icon(CupertinoIcons.circle_fill, size: 8, color: CupertinoColors.systemOrange),
+          const SizedBox(width: 8),
+          const Text('Unsaved changes', style: TextStyle(color: CupertinoColors.systemOrange, fontSize: 14)),
+        ] else if (_titleController.text.isNotEmpty || _contentController.text.isNotEmpty || _imagePaths.isNotEmpty || _audioPaths.isNotEmpty) ...[
+          const Icon(CupertinoIcons.checkmark_circle_fill, size: 16, color: CupertinoColors.systemGreen),
+          const SizedBox(width: 8),
+          const Text('All changes saved', style: TextStyle(color: CupertinoColors.systemGreen, fontSize: 14)),
         ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 }
