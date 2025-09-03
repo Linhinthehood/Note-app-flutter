@@ -37,13 +37,52 @@ class NotesListScreen extends StatelessWidget {
           builder: (context, noteProvider, child) {
             return Column(
               children: [
-                // Search Bar - positioned after SafeArea
+                // Enhanced Search Bar with indicator
                 Container(
                   padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: CupertinoSearchTextField(
-                    placeholder: 'Search notes...',
-                    onChanged: (value) => noteProvider.searchNotes(value),
-                    onSuffixTap: () => noteProvider.clearSearch(),
+                  child: Column(
+                    children: [
+                      CupertinoSearchTextField(
+                        placeholder: 'Search notes...',
+                        // Fix: Make this async since searchNotes is now async
+                        onChanged: (value) async => await noteProvider.searchNotes(value),
+                        onSuffixTap: () => noteProvider.clearSearch(),
+                      ),
+                      // Add search indicator
+                      if (noteProvider.searchQuery.isNotEmpty)
+                        Padding(
+                          padding: EdgeInsets.only(top: 4),
+                          child: Row(
+                            children: [
+                              Icon(
+                                noteProvider.isUsingSemanticSearch 
+                                  ? CupertinoIcons.sparkles 
+                                  : CupertinoIcons.search,
+                                size: 12,
+                                color: CupertinoColors.systemGrey,
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                noteProvider.isUsingSemanticSearch 
+                                  ? 'Smart search' 
+                                  : 'Basic search',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: CupertinoColors.systemGrey,
+                                ),
+                              ),
+                              Spacer(),
+                              Text(
+                                '${noteProvider.notes.length} result${noteProvider.notes.length == 1 ? '' : 's'}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: CupertinoColors.systemGrey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 

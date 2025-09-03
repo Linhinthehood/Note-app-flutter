@@ -3,16 +3,42 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/note.dart';
 import '../helpers/db_helper.dart';
+import '../services/semantic_search_service.dart';
 
 class NoteProvider with ChangeNotifier {
   List<Note> _notes = [];
+  List<Note> _filteredNotes = []; // Add this for search results
   final dynamic _dbHelper;
   final Map<String, bool> _expandedSections = {};
   String _searchQuery = '';
   
+  // Fix: Use _filteredNotes when searching, _notes when not
   List<Note> get notes => _searchQuery.isEmpty ? _notes : _filteredNotes;
+  
+  // Fix: Add _allNotes getter that semantic search needs
+  List<Note> get _allNotes => _notes;
+  
   String get searchQuery => _searchQuery;
   Map<String, bool> get expandedSections => _expandedSections;
+
+  final SemanticSearchService _semanticSearch = SemanticSearchService();
+  bool _useSemanticSearch = true;
+  bool _indexBuilt = false;
+
+  bool get isUsingSemanticSearch => _useSemanticSearch && _indexBuilt;
+  
+  Future<void> _buildSearchIndex() async {
+    if (_allNotes.isEmpty) return;
+    
+    try {
+      await _semanticSearch.indexNotes(_allNotes);
+      _indexBuilt = true;
+      print('Semantic search index built with ${_allNotes.length} notes');
+    } catch (e) {
+      print('Failed to build search index: $e');
+      _indexBuilt = false;
+    }
+  }
 
   // Regular constructor
   NoteProvider() : _dbHelper = DBHelper.instance {
@@ -28,35 +54,69 @@ class NoteProvider with ChangeNotifier {
     if (_dbHelper != null) {
       _notes = await _dbHelper.getAllNotes();
       notifyListeners();
+      
+      // Build search index after loading notes
+      if (_notes.isNotEmpty && !_indexBuilt) {
+        _buildSearchIndex();
+      }
     }
   }
-  List<Note> get _filteredNotes {
-    if (_searchQuery.isEmpty) return _notes;
+
+  // Fix: Replace the basic search with semantic search
+  Future<void> searchNotes(String query) async {
+    _searchQuery = query;
     
-    final query = _searchQuery.toLowerCase();
-    return _notes.where((note) {
-      final titleMatch = note.title.toLowerCase().contains(query);
-      final contentMatch = note.content.toLowerCase().contains(query);
-      final dateMatch = DateFormat.yMMMd().format(note.createdAt).toLowerCase().contains(query);
+    if (query.isEmpty) {
+      _filteredNotes = [];
+      notifyListeners();
+      return;
+    }
+    
+    // Try semantic search first
+    if (_useSemanticSearch) {
+      try {
+        if (!_indexBuilt) {
+          await _buildSearchIndex();
+        }
+        
+        if (_indexBuilt) {
+          final results = await _semanticSearch.search(query, _allNotes);
+          if (results.isNotEmpty) {
+            _filteredNotes = results.map((r) => r.note).toList();
+            notifyListeners();
+            return;
+          }
+        }
+      } catch (e) {
+        print('Semantic search failed: $e');
+      }
+    }
+    
+    // Fallback to basic search
+    _performBasicSearch(query);
+    notifyListeners();
+  }
+
+  void _performBasicSearch(String query) {
+    final lowerQuery = query.toLowerCase();
+    _filteredNotes = _notes.where((note) {
+      final titleMatch = note.title.toLowerCase().contains(lowerQuery);
+      final contentMatch = note.content.toLowerCase().contains(lowerQuery);
+      final dateMatch = DateFormat.yMMMd().format(note.createdAt).toLowerCase().contains(lowerQuery);
       final tagsMatch = note.tags.any((tag) => 
-        tag.toLowerCase().contains(query) || 
-        '#${tag.toLowerCase()}'.contains(query)
-    );
+        tag.toLowerCase().contains(lowerQuery) || 
+        '#${tag.toLowerCase()}'.contains(lowerQuery)
+      );
       return titleMatch || contentMatch || dateMatch || tagsMatch;
     }).toList();
   }
 
-  // Add search method
-  void searchNotes(String query) {
-    _searchQuery = query;
+  void clearSearch() {
+    _searchQuery = '';
+    _filteredNotes = [];
     notifyListeners();
   }
 
-  // Clear search
-  void clearSearch() {
-    _searchQuery = '';
-    notifyListeners();
-  }
   Future<void> addNote(String title, String content) async {
     Note newNote = Note(
       title: title,
@@ -67,47 +127,58 @@ class NoteProvider with ChangeNotifier {
 
     if (_dbHelper != null) {
       await _dbHelper.insert(newNote);
-      await fetchNotes(); // Refresh the list from storage
+      await fetchNotes();
     } else {
-      // For testing - just add to memory
       _notes.add(newNote);
       notifyListeners();
     }
+    
+    // Fix: Rebuild search index after adding note
+    _indexBuilt = false;
   }
 
   Future<void> updateNote(Note note) async {
     if (_dbHelper != null) {
       await _dbHelper.update(note);
-      await fetchNotes(); // Refresh the list
+      await fetchNotes();
     } else {
-      // For testing - update in memory
       int index = _notes.indexWhere((n) => n.id == note.id);
       if (index != -1) {
         _notes[index] = note;
         notifyListeners();
       }
     }
+    
+    // Fix: Rebuild search index after updating note
+    _indexBuilt = false;
   }
 
   Future<void> deleteNote(int id) async {
     if (_dbHelper != null) {
       await _dbHelper.delete(id);
-      await fetchNotes(); // Refresh the list
+      await fetchNotes();
     } else {
-      // For testing - remove from memory
       _notes.removeWhere((note) => note.id == id);
       notifyListeners();
     }
+    
+    // Fix: Rebuild search index after deleting note
+    _indexBuilt = false;
   }
+
   Future<void> addNoteWithMedia(Note note) async {
-  if (_dbHelper != null) {
-    await _dbHelper.insert(note);
-    await fetchNotes();
-  } else {
-    _notes.add(note);
-    notifyListeners();
+    if (_dbHelper != null) {
+      await _dbHelper.insert(note);
+      await fetchNotes();
+    } else {
+      _notes.add(note);
+      notifyListeners();
+    }
+    
+    // Fix: Rebuild search index after adding note with media
+    _indexBuilt = false;
   }
-}
+
   Future<void> togglePinNote(Note note) async {
     Note updatedNote = Note(
       id: note.id,
@@ -115,8 +186,8 @@ class NoteProvider with ChangeNotifier {
       content: note.content,
       createdAt: note.createdAt,
       isPinned: !note.isPinned,
-      imagePaths: note.imagePaths, // Add this
-      audioPaths: note.audioPaths,  // Add this
+      imagePaths: note.imagePaths,
+      audioPaths: note.audioPaths,
       tags: note.tags,
     );
     await updateNote(updatedNote);
@@ -127,8 +198,10 @@ class NoteProvider with ChangeNotifier {
     List<Note> pinnedNotes = [];
     List<Note> unpinnedNotes = [];
 
-    // Separate pinned and unpinned notes
-    for (Note note in _notes) {
+    // Use the correct notes list (filtered when searching, all when not)
+    final notesToGroup = _searchQuery.isEmpty ? _notes : _filteredNotes;
+
+    for (Note note in notesToGroup) {
       if (note.isPinned) {
         pinnedNotes.add(note);
       } else {
@@ -136,24 +209,18 @@ class NoteProvider with ChangeNotifier {
       }
     }
 
-    // Create PINNED group if there are pinned notes
     if (pinnedNotes.isNotEmpty) {
       grouped['PINNED'] = pinnedNotes;
-      // Initialize PINNED section as expanded if not set
       if (!_expandedSections.containsKey('PINNED')) {
         _expandedSections['PINNED'] = true;
       }
-      // Sort pinned notes by creation date (newest first)
       pinnedNotes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     }
 
-    // Group unpinned notes by month
     for (Note note in unpinnedNotes) {
-      String monthKey =
-          DateFormat('MMM yyyy').format(note.createdAt).toUpperCase();
+      String monthKey = DateFormat('MMM yyyy').format(note.createdAt).toUpperCase();
       if (!grouped.containsKey(monthKey)) {
         grouped[monthKey] = [];
-        // Initialize section as expanded if not set
         if (!_expandedSections.containsKey(monthKey)) {
           _expandedSections[monthKey] = true;
         }
@@ -161,7 +228,6 @@ class NoteProvider with ChangeNotifier {
       grouped[monthKey]!.add(note);
     }
 
-    // Sort notes within each month group by creation date (newest first)
     grouped.forEach((key, notes) {
       if (key != 'PINNED') {
         notes.sort((a, b) => b.createdAt.compareTo(a.createdAt));
