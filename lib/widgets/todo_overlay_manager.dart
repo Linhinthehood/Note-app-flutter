@@ -115,10 +115,8 @@ class TodoOverlayManager {
             );
           }
         }
-      // ignore: empty_catches
-      } catch (e) {
-
-      }
+        // ignore: empty_catches
+      } catch (e) {}
     }
   }
 

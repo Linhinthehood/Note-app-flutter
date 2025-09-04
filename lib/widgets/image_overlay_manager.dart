@@ -95,7 +95,6 @@ class ImageOverlayManager {
         }
       } catch (e) {
         // If metadata parsing fails, continue with default positions
-
       }
     }
   }
