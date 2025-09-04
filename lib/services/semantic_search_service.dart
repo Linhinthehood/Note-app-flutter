@@ -55,30 +55,17 @@ class SemanticSearchService {
 
   Future<void> _copyDatabaseFromAssets(String dbPath) async {
     try {
-    
       final data = await rootBundle.load(_assetDbPath);
       final bytes = data.buffer.asUint8List();
 
       final file = File(dbPath);
       await file.writeAsBytes(bytes);
 
-     
-
       final db = await openDatabase(dbPath);
-      final vocabResult =
-          await db.rawQuery('SELECT COUNT(*) as count FROM vocabulary');
-      final docResult =
-          await db.rawQuery('SELECT COUNT(*) as count FROM documents');
-
-      final vocabCount = vocabResult.first['count'];
-      final docCount = docResult.first['count'];
-
-
       await db.close();
 
       _isPrebuiltLoaded = true;
     } catch (e) {
-
       await _createEmptyDatabase(dbPath);
     }
   }
@@ -278,7 +265,6 @@ class SemanticSearchService {
       final vector = Map<String, double>.from(jsonDecode(vectorJson));
       _docVectors[docId] = vector;
     }
-
   }
 
   List<String> _tokenize(String text) {
@@ -341,8 +327,6 @@ class SemanticSearchService {
         await db.rawQuery('SELECT MAX(doc_id) as max_id FROM documents');
     final maxPrebuiltId = (result.first['max_id'] as int?) ?? -1;
 
-
-
     final batch = db.batch();
     for (int i = 0; i < notes.length; i++) {
       final note = notes[i];
@@ -363,7 +347,6 @@ class SemanticSearchService {
     }
 
     await batch.commit();
- 
   }
 
   // Enhanced search with fuzzy matching

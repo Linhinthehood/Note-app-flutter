@@ -33,7 +33,6 @@ class NoteProvider with ChangeNotifier {
     try {
       await _semanticSearch.indexNotes(_allNotes);
       _indexBuilt = true;
-
     } catch (e) {
       _indexBuilt = false;
     }
@@ -86,10 +85,8 @@ class NoteProvider with ChangeNotifier {
             return;
           }
         }
-      // ignore: empty_catches
-      } catch (e) {
-
-      }
+        // ignore: empty_catches
+      } catch (e) {}
     }
 
     // Fallback to basic search

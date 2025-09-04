@@ -154,10 +154,8 @@ class AudioOverlayManager {
             }
           }
         }
-      // ignore: empty_catches
-      } catch (e) {
-
-      }
+        // ignore: empty_catches
+      } catch (e) {}
     }
   }
 
@@ -306,7 +304,6 @@ class AudioOverlayManager {
                 HapticFeedback.mediumImpact();
               },
               onDragEnd: (details) {
-
                 final RenderBox? renderBox =
                     context.findRenderObject() as RenderBox?;
                 if (renderBox != null) {
