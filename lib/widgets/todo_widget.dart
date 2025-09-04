@@ -28,7 +28,7 @@ class TodoWidget extends StatefulWidget {
   State<TodoWidget> createState() => _TodoWidgetState();
 }
 
-class _TodoWidgetState extends State<TodoWidget> 
+class _TodoWidgetState extends State<TodoWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -44,7 +44,7 @@ class _TodoWidgetState extends State<TodoWidget>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    
+
     _scaleAnimation = Tween<double>(
       begin: 1.0,
       end: 0.0,
@@ -118,7 +118,9 @@ class _TodoWidgetState extends State<TodoWidget>
             return Transform.scale(
               scale: _scaleAnimation.value == 0 ? 1.0 : _scaleAnimation.value,
               child: Opacity(
-                opacity: _opacityAnimation.value == 0 ? 1.0 : _opacityAnimation.value,
+                opacity: _opacityAnimation.value == 0
+                    ? 1.0
+                    : _opacityAnimation.value,
                 child: Container(
                   constraints: const BoxConstraints(
                     minWidth: 200,
@@ -126,11 +128,12 @@ class _TodoWidgetState extends State<TodoWidget>
                   ),
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: CupertinoColors.systemBackground.resolveFrom(context),
+                    color:
+                        CupertinoColors.systemBackground.resolveFrom(context),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: widget.isSelected 
-                          ? CupertinoColors.activeBlue 
+                      color: widget.isSelected
+                          ? CupertinoColors.activeBlue
                           : CupertinoColors.separator.resolveFrom(context),
                       width: widget.isSelected ? 2 : 1,
                     ),
@@ -158,7 +161,8 @@ class _TodoWidgetState extends State<TodoWidget>
                             border: Border.all(
                               color: widget.todoItem.isCompleted
                                   ? CupertinoColors.systemGreen
-                                  : CupertinoColors.systemGrey.resolveFrom(context),
+                                  : CupertinoColors.systemGrey
+                                      .resolveFrom(context),
                               width: 2,
                             ),
                             color: widget.todoItem.isCompleted
@@ -174,7 +178,7 @@ class _TodoWidgetState extends State<TodoWidget>
                               : null,
                         ),
                       ),
-                      
+
                       // Content
                       Expanded(
                         child: _isEditing
@@ -196,13 +200,15 @@ class _TodoWidgetState extends State<TodoWidget>
                                         ? TextDecoration.lineThrough
                                         : null,
                                     color: widget.todoItem.isCompleted
-                                        ? CupertinoColors.systemGrey.resolveFrom(context)
-                                        : CupertinoColors.label.resolveFrom(context),
+                                        ? CupertinoColors.systemGrey
+                                            .resolveFrom(context)
+                                        : CupertinoColors.label
+                                            .resolveFrom(context),
                                   ),
                                 ),
                               ),
                       ),
-                      
+
                       // Remove button (only show when selected)
                       if (widget.isSelected)
                         GestureDetector(

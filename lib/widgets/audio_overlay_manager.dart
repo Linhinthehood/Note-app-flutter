@@ -62,12 +62,12 @@ class AudioOverlayManager {
   void addAudio(String audioPath) {
     // Calculate position for new audio (avoid overlapping)
     Offset position = const Offset(20, 100);
-    
+
     // Check for existing audio items and adjust position
-    while (_audioItems.any((item) => 
-        (item.position - position).distance < 100)) {
+    while (
+        _audioItems.any((item) => (item.position - position).distance < 100)) {
       position = Offset(position.dx + 20, position.dy + 120);
-      
+
       // Wrap around if we go too far
       if (position.dy > _containerSize.height - 200) {
         position = Offset(position.dx + 100, 100);
@@ -78,7 +78,7 @@ class AudioOverlayManager {
       audioPath: audioPath,
       position: position,
     );
-    
+
     _audioItems.add(audioItem);
     onStateChanged();
   }
@@ -114,127 +114,124 @@ class AudioOverlayManager {
   }
 
   void _loadAudioMetadata(String text) {
-  final RegExp metadataRegex = RegExp(r'\[AUDIO_META:([^\]]+)\]');
-  final match = metadataRegex.firstMatch(text);
-  
-  if (match != null) {
-    try {
-      final metadataJson = match.group(1);
-      final decodedBytes = base64Decode(metadataJson!);
-      final metadataString = utf8.decode(decodedBytes);
-      final metadata = jsonDecode(metadataString) as Map<String, dynamic>;
-      
-      
-      
-      if (metadata.containsKey('positions')) {
-        final positions = metadata['positions'] as Map<String, dynamic>;
-        for (final entry in positions.entries) {
-          final pos = entry.value as Map<String, dynamic>;
-          final position = Offset(pos['x']?.toDouble() ?? 20, pos['y']?.toDouble() ?? 20);
-          
-          // Find existing audio item or create new one
-          final existingIndex = _audioItems.indexWhere((item) => item.audioPath == entry.key);
-          if (existingIndex != -1) {
-            _audioItems[existingIndex].position = position;
-          } else {
-            _audioItems.add(AudioItem(
-              audioPath: entry.key,
-              position: position,
-            ));
+    final RegExp metadataRegex = RegExp(r'\[AUDIO_META:([^\]]+)\]');
+    final match = metadataRegex.firstMatch(text);
+
+    if (match != null) {
+      try {
+        final metadataJson = match.group(1);
+        final decodedBytes = base64Decode(metadataJson!);
+        final metadataString = utf8.decode(decodedBytes);
+        final metadata = jsonDecode(metadataString) as Map<String, dynamic>;
+
+        if (metadata.containsKey('positions')) {
+          final positions = metadata['positions'] as Map<String, dynamic>;
+          for (final entry in positions.entries) {
+            final pos = entry.value as Map<String, dynamic>;
+            final position =
+                Offset(pos['x']?.toDouble() ?? 20, pos['y']?.toDouble() ?? 20);
+
+            // Find existing audio item or create new one
+            final existingIndex =
+                _audioItems.indexWhere((item) => item.audioPath == entry.key);
+            if (existingIndex != -1) {
+              _audioItems[existingIndex].position = position;
+            } else {
+              _audioItems.add(AudioItem(
+                audioPath: entry.key,
+                position: position,
+              ));
+            }
           }
         }
-      }
-      
-      if (metadata.containsKey('customNames')) {
-        final names = metadata['customNames'] as Map<String, dynamic>;
-        for (final entry in names.entries) {
-          final existingIndex = _audioItems.indexWhere((item) => item.audioPath == entry.key);
-          if (existingIndex != -1) {
-            _audioItems[existingIndex].customName = entry.value as String?;
+
+        if (metadata.containsKey('customNames')) {
+          final names = metadata['customNames'] as Map<String, dynamic>;
+          for (final entry in names.entries) {
+            final existingIndex =
+                _audioItems.indexWhere((item) => item.audioPath == entry.key);
+            if (existingIndex != -1) {
+              _audioItems[existingIndex].customName = entry.value as String?;
+            }
           }
         }
+      } catch (e) {
+        print('Failed to parse audio metadata: $e');
       }
-    } catch (e) {
-      print('Failed to parse audio metadata: $e');
     }
   }
-}
 
   String saveAudioMetadata(String text) {
     // Remove existing metadata first
     text = text.replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '');
-    
+
     // Don't add metadata if there are no audios
     if (_audioItems.isEmpty) {
       return text;
     }
-    
+
     final metadata = {
       'positions': {},
       'customNames': {},
     };
-    
+
     for (final audioItem in _audioItems) {
       metadata['positions']![audioItem.audioPath] = {
         'x': audioItem.position.dx,
         'y': audioItem.position.dy,
       };
-      
+
       if (audioItem.customName != null && audioItem.customName!.isNotEmpty) {
         metadata['customNames']![audioItem.audioPath] = audioItem.customName;
       }
     }
-    
+
     final metadataString = jsonEncode(metadata);
     final encodedMetadata = base64Encode(utf8.encode(metadataString));
-    
-   
-    
+
     // Add metadata at the end, ensuring clean format
     final cleanText = text.trim();
-    return cleanText.isEmpty 
+    return cleanText.isEmpty
         ? '[AUDIO_META:$encodedMetadata]'
         : '$cleanText\n[AUDIO_META:$encodedMetadata]';
   }
 
   List<String> _getAudioPaths(String text) {
     final RegExp audioRegex = RegExp(r'\[AUDIO:([^\]]+)\]');
-    return audioRegex.allMatches(text)
+    return audioRegex
+        .allMatches(text)
         .map((match) => match.group(1)!)
         .where((path) => path.isNotEmpty)
         .toList();
   }
 
   void initializeFromText(String text) {
-      final RegExp audioRegex = RegExp(r'\[AUDIO:([^\]]+)\]');
-      final matches = audioRegex.allMatches(text);
-      
-     
-      
-      // Load saved metadata first
-      _loadAudioMetadata(text);
-      
-      int index = 0;
-      for (final match in matches) {
-        final String? audioPath = match.group(1);
-        if (audioPath != null && File(audioPath).existsSync()) {
-          // Check if we already have this audio item from metadata loading
-          bool exists = _audioItems.any((item) => item.audioPath == audioPath);
-          
-          if (!exists) {
-            final audioItem = AudioItem(
-              audioPath: audioPath,
-              position: Offset(20, 100 + (index * 120.0)),
-            );
-            _audioItems.add(audioItem);
-            
-          } 
-          index++;
+    final RegExp audioRegex = RegExp(r'\[AUDIO:([^\]]+)\]');
+    final matches = audioRegex.allMatches(text);
+
+    // Load saved metadata first
+    _loadAudioMetadata(text);
+
+    int index = 0;
+    for (final match in matches) {
+      final String? audioPath = match.group(1);
+      if (audioPath != null && File(audioPath).existsSync()) {
+        // Check if we already have this audio item from metadata loading
+        bool exists = _audioItems.any((item) => item.audioPath == audioPath);
+
+        if (!exists) {
+          final audioItem = AudioItem(
+            audioPath: audioPath,
+            position: Offset(20, 100 + (index * 120.0)),
+          );
+          _audioItems.add(audioItem);
         }
+        index++;
       }
-      
-      onStateChanged();
     }
+
+    onStateChanged();
+  }
 
   List<Widget> buildAudioOverlays(BuildContext context, String text) {
     final audioPaths = _getAudioPaths(text);
@@ -242,14 +239,15 @@ class AudioOverlayManager {
 
     for (String audioPath in audioPaths) {
       if (!File(audioPath).existsSync()) continue;
-      
+
       final audioItem = _audioItems.firstWhere(
         (item) => item.audioPath == audioPath,
-        orElse: () => AudioItem(audioPath: audioPath, position: const Offset(20, 100)),
+        orElse: () =>
+            AudioItem(audioPath: audioPath, position: const Offset(20, 100)),
       );
-      
+
       final isSelected = _selectedAudioPath == audioPath;
-      
+
       widgets.add(
         Positioned(
           left: audioItem.position.dx,
@@ -284,7 +282,9 @@ class AudioOverlayManager {
                 width: 280,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: CupertinoColors.systemGrey5.resolveFrom(context).withOpacity(0.5),
+                  color: CupertinoColors.systemGrey5
+                      .resolveFrom(context)
+                      .withOpacity(0.5),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: CupertinoColors.separator.resolveFrom(context),
@@ -307,36 +307,39 @@ class AudioOverlayManager {
                 HapticFeedback.mediumImpact();
               },
               onDragEnd: (details) {
-                  _draggedAudio = null;
-                  
-                  final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-                  if (renderBox != null) {
-                    final localPosition = renderBox.globalToLocal(details.offset);
-                    
-                    // Use the anchor point to position more precisely
-                    final anchorOffset = _dragAnchorPoint ?? const Offset(140, 60);
-                    
-                    final targetX = localPosition.dx - 12 - anchorOffset.dx;
-                    final targetY = localPosition.dy - 12 - anchorOffset.dy;
-                    
-                    final constrainedX = targetX.clamp(0.0, _containerSize.width - 280 - 24);
-                    final constrainedY = targetY.clamp(0.0, double.infinity);
-                    
-                    final newPosition = Offset(constrainedX, constrainedY);
-                    
-                    // Update the position in our audio item
-                    final index = _audioItems.indexWhere((item) => item.audioPath == audioPath);
-                    if (index != -1) {
-                      _audioItems[index].position = newPosition;
-                      
-                    }
-                    
-                    _dragAnchorPoint = null;
-                    onStateChanged();
-                    onMetadataChanged(); // Make sure this is called to save metadata
+                _draggedAudio = null;
+
+                final RenderBox? renderBox =
+                    context.findRenderObject() as RenderBox?;
+                if (renderBox != null) {
+                  final localPosition = renderBox.globalToLocal(details.offset);
+
+                  // Use the anchor point to position more precisely
+                  final anchorOffset =
+                      _dragAnchorPoint ?? const Offset(140, 60);
+
+                  final targetX = localPosition.dx - 12 - anchorOffset.dx;
+                  final targetY = localPosition.dy - 12 - anchorOffset.dy;
+
+                  final constrainedX =
+                      targetX.clamp(0.0, _containerSize.width - 280 - 24);
+                  final constrainedY = targetY.clamp(0.0, double.infinity);
+
+                  final newPosition = Offset(constrainedX, constrainedY);
+
+                  // Update the position in our audio item
+                  final index = _audioItems
+                      .indexWhere((item) => item.audioPath == audioPath);
+                  if (index != -1) {
+                    _audioItems[index].position = newPosition;
                   }
-                  HapticFeedback.lightImpact();
-                },
+
+                  _dragAnchorPoint = null;
+                  onStateChanged();
+                  onMetadataChanged(); // Make sure this is called to save metadata
+                }
+                HapticFeedback.lightImpact();
+              },
               child: AudioPlayerWidget(
                 audioPath: audioPath,
                 position: audioItem.position,

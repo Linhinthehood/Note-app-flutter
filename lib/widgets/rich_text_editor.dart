@@ -6,6 +6,7 @@ import 'audio_overlay_manager.dart'; // Add this import
 import 'highlighted_text.dart';
 import 'todo_overlay_manager.dart';
 import 'todo_creation_dialog.dart';
+
 mixin ImageMetadataProvider {
   String saveImageMetadata(String text);
 }
@@ -40,8 +41,8 @@ class RichTextEditor extends StatefulWidget {
   }
 }
 
-class _RichTextEditorState extends State<RichTextEditor> 
-  with ImageMetadataProvider, AudioMetadataProvider, TodoMetadataProvider {
+class _RichTextEditorState extends State<RichTextEditor>
+    with ImageMetadataProvider, AudioMetadataProvider, TodoMetadataProvider {
   final ScrollController _scrollController = ScrollController();
   late TextEditingController _displayController;
   String _lastControllerText = '';
@@ -57,24 +58,24 @@ class _RichTextEditorState extends State<RichTextEditor>
       onStateChanged: () => setState(() {}),
       onMetadataChanged: _saveMetadataToController,
     );
-    
+
     // Initialize audio manager
     _audioManager = AudioOverlayManager(
       onAudioRemove: widget.onAudioRemove,
       onStateChanged: () => setState(() {}),
       onMetadataChanged: _saveMetadataToController,
     );
-    
+
     widget.controller.addListener(_onControllerChange);
     _updateDisplayController();
     _imageManager.initializeFromText(widget.controller.text);
     _audioManager.initializeFromText(widget.controller.text); // Add this
 
-     _todoManager = TodoOverlayManager(
-        onStateChanged: () => setState(() {}),
-        onMetadataChanged: _saveMetadataToController,
-      );
-     _todoManager.initializeFromText(widget.controller.text);
+    _todoManager = TodoOverlayManager(
+      onStateChanged: () => setState(() {}),
+      onMetadataChanged: _saveMetadataToController,
+    );
+    _todoManager.initializeFromText(widget.controller.text);
   }
 
   @override
@@ -89,16 +90,17 @@ class _RichTextEditorState extends State<RichTextEditor>
   }
 
   void _saveMetadataToController() {
-      final currentText = widget.controller.text;
-      String updatedText = _imageManager.saveImageMetadata(currentText);
-      updatedText = _audioManager.saveAudioMetadata(updatedText); // Make sure this is called
-      updatedText = _todoManager.saveTodoMetadata(updatedText);
-      if (currentText != updatedText) {
-        widget.controller.removeListener(_onControllerChange);
-        widget.controller.text = updatedText;
-        _lastControllerText = updatedText;
-        widget.controller.addListener(_onControllerChange);
-      }
+    final currentText = widget.controller.text;
+    String updatedText = _imageManager.saveImageMetadata(currentText);
+    updatedText = _audioManager
+        .saveAudioMetadata(updatedText); // Make sure this is called
+    updatedText = _todoManager.saveTodoMetadata(updatedText);
+    if (currentText != updatedText) {
+      widget.controller.removeListener(_onControllerChange);
+      widget.controller.text = updatedText;
+      _lastControllerText = updatedText;
+      widget.controller.addListener(_onControllerChange);
+    }
   }
 
   void _onControllerChange() {
@@ -106,7 +108,7 @@ class _RichTextEditorState extends State<RichTextEditor>
       _updateDisplayController();
       _imageManager.initializeFromText(widget.controller.text);
       _audioManager.initializeFromText(widget.controller.text); // Add this
-      _todoManager.initializeFromText(widget.controller.text); 
+      _todoManager.initializeFromText(widget.controller.text);
       _lastControllerText = widget.controller.text;
     }
   }
@@ -119,16 +121,17 @@ class _RichTextEditorState extends State<RichTextEditor>
         .replaceAll(RegExp(r'\[AUDIO_META:[^\]]+\]\n?'), '')
         .replaceAll(RegExp(r'\[TODO_META:[^\]]+\]\n?'), '')
         .trim();
-        // Add this
-    
+    // Add this
+
     if (_displayController.text != cleanText) {
       final selection = _displayController.selection;
       _displayController.text = cleanText;
-      
+
       if (selection.baseOffset <= cleanText.length) {
         _displayController.selection = selection;
       } else {
-        _displayController.selection = TextSelection.collapsed(offset: cleanText.length);
+        _displayController.selection =
+            TextSelection.collapsed(offset: cleanText.length);
       }
     }
   }
@@ -137,16 +140,19 @@ class _RichTextEditorState extends State<RichTextEditor>
     final RegExp imageRegex = RegExp(r'\[IMAGE:([^\]]+)\]');
     final RegExp audioRegex = RegExp(r'\[AUDIO:([^\]]+)\]'); // Add this
     final RegExp todoMetaRegex = RegExp(r'\[TODO_META:[^\]]+\]');
-    
-    final existingImages = imageRegex.allMatches(widget.controller.text)
-        .map((match) => match.group(0)!)
-        .toList();
-        
-    final existingAudios = audioRegex.allMatches(widget.controller.text) // Add this
+
+    final existingImages = imageRegex
+        .allMatches(widget.controller.text)
         .map((match) => match.group(0)!)
         .toList();
 
-    final existingTodoMeta = todoMetaRegex.allMatches(widget.controller.text) // Add this
+    final existingAudios = audioRegex
+        .allMatches(widget.controller.text) // Add this
+        .map((match) => match.group(0)!)
+        .toList();
+
+    final existingTodoMeta = todoMetaRegex
+        .allMatches(widget.controller.text) // Add this
         .map((match) => match.group(0)!)
         .toList();
 
@@ -154,14 +160,15 @@ class _RichTextEditorState extends State<RichTextEditor>
     for (String imageTag in existingImages) {
       newText += '\n$imageTag';
     }
-    for (String audioTag in existingAudios) { // Add this
+    for (String audioTag in existingAudios) {
+      // Add this
       newText += '\n$audioTag';
     }
-    for (String todoMeta in existingTodoMeta) { // Add this
+    for (String todoMeta in existingTodoMeta) {
+      // Add this
       newText += '\n$todoMeta';
     }
 
-    
     _lastControllerText = newText;
     widget.controller.text = newText;
   }
@@ -171,17 +178,20 @@ class _RichTextEditorState extends State<RichTextEditor>
     _audioManager.deselectAll(); // Add this
     _todoManager.deselectAll();
   }
+
   @override
   String saveTodoMetadata(String text) {
     return _todoManager.saveTodoMetadata(text);
   }
+
   @override
   String saveImageMetadata(String text) {
     return _imageManager.saveImageMetadata(text);
   }
 
   @override
-  String saveAudioMetadata(String text) { // Add this method
+  String saveAudioMetadata(String text) {
+    // Add this method
     return _audioManager.saveAudioMetadata(text);
   }
 
@@ -189,121 +199,133 @@ class _RichTextEditorState extends State<RichTextEditor>
   void addAudio(String audioPath) {
     _audioManager.addAudio(audioPath);
   }
-  
-  @override
-Widget build(BuildContext context) {
-  return Container(
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(8),
-      border: Border.all(
-        color: CupertinoColors.separator.resolveFrom(context),
-        width: 0.5,
-      ),
-    ),
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        _imageManager.updateContainerSize(Size(constraints.maxWidth, constraints.maxHeight));
-        _audioManager.updateContainerSize(Size(constraints.maxWidth, constraints.maxHeight));
-        _todoManager.updateContainerSize(Size(constraints.maxWidth, constraints.maxHeight)); // Add this line
 
-        return GestureDetector(
-          onTap: _handleTapOutside,
-          onDoubleTap: () {
-            // Show todo creation dialog
-            showCupertinoDialog(
-              context: context,
-              builder: (context) => TodoCreationDialog(
-                onCreateTodo: (content) {
-                  // Add todo at center of screen
-                  final position = Offset(
-                    constraints.maxWidth / 2 - 100,
-                    constraints.maxHeight / 2 - 50,
-                  );
-                  _todoManager.addTodo(content, position);
-                },
-              ),
-            );
-          },
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            child: Container(
-              constraints: BoxConstraints(
-                minHeight: constraints.maxHeight - 24, // Reduced padding
-              ),
-              padding: const EdgeInsets.all(12), // Reduced padding
-              child: Stack(
-                children: [
-                  // Text input area
-                  Column(
-                    children: [
-                      Stack(
-                        children: [
-                          // Background text field for editing
-                          CupertinoTextField(
-                            controller: _displayController,
-                            focusNode: widget.focusNode,
-                            placeholder: 'Start typing your note...',
-                            maxLines: null,
-                            minLines: 20, // Increased minLines for larger text area
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: widget.searchQuery.isNotEmpty 
-                                  ? Colors.transparent 
-                                  : null,
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: CupertinoColors.separator.resolveFrom(context),
+          width: 0.5,
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          _imageManager.updateContainerSize(
+              Size(constraints.maxWidth, constraints.maxHeight));
+          _audioManager.updateContainerSize(
+              Size(constraints.maxWidth, constraints.maxHeight));
+          _todoManager.updateContainerSize(Size(
+              constraints.maxWidth, constraints.maxHeight)); // Add this line
+
+          return GestureDetector(
+            onTap: _handleTapOutside,
+            onDoubleTap: () {
+              // Show todo creation dialog
+              showCupertinoDialog(
+                context: context,
+                builder: (context) => TodoCreationDialog(
+                  onCreateTodo: (content) {
+                    // Add todo at center of screen
+                    final position = Offset(
+                      constraints.maxWidth / 2 - 100,
+                      constraints.maxHeight / 2 - 50,
+                    );
+                    _todoManager.addTodo(content, position);
+                  },
+                ),
+              );
+            },
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              child: Container(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight - 24, // Reduced padding
+                ),
+                padding: const EdgeInsets.all(12), // Reduced padding
+                child: Stack(
+                  children: [
+                    // Text input area
+                    Column(
+                      children: [
+                        Stack(
+                          children: [
+                            // Background text field for editing
+                            CupertinoTextField(
+                              controller: _displayController,
+                              focusNode: widget.focusNode,
+                              placeholder: 'Start typing your note...',
+                              maxLines: null,
+                              minLines:
+                                  20, // Increased minLines for larger text area
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: widget.searchQuery.isNotEmpty
+                                    ? Colors.transparent
+                                    : null,
+                              ),
+                              decoration: const BoxDecoration(
+                                color: Colors.transparent,
+                              ),
+                              padding: EdgeInsets.zero,
+                              onChanged: _onDisplayTextChanged,
                             ),
-                            decoration: const BoxDecoration(
-                              color: Colors.transparent,
-                            ),
-                            padding: EdgeInsets.zero,
-                            onChanged: _onDisplayTextChanged,
-                          ),
-                          
-                          // Overlay highlighted text when searching
-                          if (widget.searchQuery.isNotEmpty)
-                            Positioned.fill(
-                              child: IgnorePointer(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  child: HighlightedText(
-                                    text: _displayController.text.isEmpty 
-                                        ? 'Start typing your note...' 
-                                        : _displayController.text,
-                                    searchQuery: widget.searchQuery,
-                                    textStyle: TextStyle(
-                                      fontSize: 16,
-                                      color: _displayController.text.isEmpty
-                                          ? CupertinoColors.placeholderText.resolveFrom(context)
-                                          : CupertinoColors.label.resolveFrom(context),
-                                    ),
-                                    highlightStyle: TextStyle(
-                                      backgroundColor: CupertinoColors.systemYellow.withOpacity(0.3),
-                                      color: CupertinoColors.label.resolveFrom(context),
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
+
+                            // Overlay highlighted text when searching
+                            if (widget.searchQuery.isNotEmpty)
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: Padding(
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 8),
+                                    child: HighlightedText(
+                                      text: _displayController.text.isEmpty
+                                          ? 'Start typing your note...'
+                                          : _displayController.text,
+                                      searchQuery: widget.searchQuery,
+                                      textStyle: TextStyle(
+                                        fontSize: 16,
+                                        color: _displayController.text.isEmpty
+                                            ? CupertinoColors.placeholderText
+                                                .resolveFrom(context)
+                                            : CupertinoColors.label
+                                                .resolveFrom(context),
+                                      ),
+                                      highlightStyle: TextStyle(
+                                        backgroundColor: CupertinoColors
+                                            .systemYellow
+                                            .withOpacity(0.3),
+                                        color: CupertinoColors.label
+                                            .resolveFrom(context),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  
-                  // Images positioned within the scrollable content
-                  ..._imageManager.buildImageOverlays(context, widget.controller.text),
-                  
-                  // Audio players positioned within the scrollable content
-                  ..._audioManager.buildAudioOverlays(context, widget.controller.text),
+                          ],
+                        ),
+                      ],
+                    ),
 
-                  ..._todoManager.buildTodoOverlays(context), 
-                ],
+                    // Images positioned within the scrollable content
+                    ..._imageManager.buildImageOverlays(
+                        context, widget.controller.text),
+
+                    // Audio players positioned within the scrollable content
+                    ..._audioManager.buildAudioOverlays(
+                        context, widget.controller.text),
+
+                    ..._todoManager.buildTodoOverlays(context),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
-    ),
-  );
-}
+          );
+        },
+      ),
+    );
+  }
 }

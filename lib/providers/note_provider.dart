@@ -11,13 +11,13 @@ class NoteProvider with ChangeNotifier {
   final dynamic _dbHelper;
   final Map<String, bool> _expandedSections = {};
   String _searchQuery = '';
-  
+
   // Fix: Use _filteredNotes when searching, _notes when not
   List<Note> get notes => _searchQuery.isEmpty ? _notes : _filteredNotes;
-  
+
   // Fix: Add _allNotes getter that semantic search needs
   List<Note> get _allNotes => _notes;
-  
+
   String get searchQuery => _searchQuery;
   Map<String, bool> get expandedSections => _expandedSections;
 
@@ -26,10 +26,10 @@ class NoteProvider with ChangeNotifier {
   bool _indexBuilt = false;
 
   bool get isUsingSemanticSearch => _useSemanticSearch && _indexBuilt;
-  
+
   Future<void> _buildSearchIndex() async {
     if (_allNotes.isEmpty) return;
-    
+
     try {
       await _semanticSearch.indexNotes(_allNotes);
       _indexBuilt = true;
@@ -54,7 +54,7 @@ class NoteProvider with ChangeNotifier {
     if (_dbHelper != null) {
       _notes = await _dbHelper.getAllNotes();
       notifyListeners();
-      
+
       // Build search index after loading notes
       if (_notes.isNotEmpty && !_indexBuilt) {
         _buildSearchIndex();
@@ -65,20 +65,20 @@ class NoteProvider with ChangeNotifier {
   // Fix: Replace the basic search with semantic search
   Future<void> searchNotes(String query) async {
     _searchQuery = query;
-    
+
     if (query.isEmpty) {
       _filteredNotes = [];
       notifyListeners();
       return;
     }
-    
+
     // Try semantic search first
     if (_useSemanticSearch) {
       try {
         if (!_indexBuilt) {
           await _buildSearchIndex();
         }
-        
+
         if (_indexBuilt) {
           final results = await _semanticSearch.search(query, _allNotes);
           if (results.isNotEmpty) {
@@ -91,7 +91,7 @@ class NoteProvider with ChangeNotifier {
         print('Semantic search failed: $e');
       }
     }
-    
+
     // Fallback to basic search
     _performBasicSearch(query);
     notifyListeners();
@@ -102,11 +102,13 @@ class NoteProvider with ChangeNotifier {
     _filteredNotes = _notes.where((note) {
       final titleMatch = note.title.toLowerCase().contains(lowerQuery);
       final contentMatch = note.content.toLowerCase().contains(lowerQuery);
-      final dateMatch = DateFormat.yMMMd().format(note.createdAt).toLowerCase().contains(lowerQuery);
-      final tagsMatch = note.tags.any((tag) => 
-        tag.toLowerCase().contains(lowerQuery) || 
-        '#${tag.toLowerCase()}'.contains(lowerQuery)
-      );
+      final dateMatch = DateFormat.yMMMd()
+          .format(note.createdAt)
+          .toLowerCase()
+          .contains(lowerQuery);
+      final tagsMatch = note.tags.any((tag) =>
+          tag.toLowerCase().contains(lowerQuery) ||
+          '#${tag.toLowerCase()}'.contains(lowerQuery));
       return titleMatch || contentMatch || dateMatch || tagsMatch;
     }).toList();
   }
@@ -132,7 +134,7 @@ class NoteProvider with ChangeNotifier {
       _notes.add(newNote);
       notifyListeners();
     }
-    
+
     // Fix: Rebuild search index after adding note
     _indexBuilt = false;
   }
@@ -148,7 +150,7 @@ class NoteProvider with ChangeNotifier {
         notifyListeners();
       }
     }
-    
+
     // Fix: Rebuild search index after updating note
     _indexBuilt = false;
   }
@@ -161,7 +163,7 @@ class NoteProvider with ChangeNotifier {
       _notes.removeWhere((note) => note.id == id);
       notifyListeners();
     }
-    
+
     // Fix: Rebuild search index after deleting note
     _indexBuilt = false;
   }
@@ -174,7 +176,7 @@ class NoteProvider with ChangeNotifier {
       _notes.add(note);
       notifyListeners();
     }
-    
+
     // Fix: Rebuild search index after adding note with media
     _indexBuilt = false;
   }
@@ -218,7 +220,8 @@ class NoteProvider with ChangeNotifier {
     }
 
     for (Note note in unpinnedNotes) {
-      String monthKey = DateFormat('MMM yyyy').format(note.createdAt).toUpperCase();
+      String monthKey =
+          DateFormat('MMM yyyy').format(note.createdAt).toUpperCase();
       if (!grouped.containsKey(monthKey)) {
         grouped[monthKey] = [];
         if (!_expandedSections.containsKey(monthKey)) {

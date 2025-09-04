@@ -41,15 +41,13 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
   DateTime? _dateAdded;
   int _fileSize = 0;
   String _fileExtension = '';
- 
-
 
   @override
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
     _initializeAudio();
-    
+
     _audioPlayer.onDurationChanged.listen((duration) {
       if (mounted) {
         setState(() => _duration = duration);
@@ -74,20 +72,23 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
       final file = File(widget.audioPath);
       if (await file.exists()) {
         // Use custom name if available, otherwise use filename
-        _fileName = widget.customName ?? path.basenameWithoutExtension(widget.audioPath);
-        _fileExtension = path.extension(widget.audioPath).replaceFirst('.', '').toUpperCase();
+        _fileName = widget.customName ??
+            path.basenameWithoutExtension(widget.audioPath);
+        _fileExtension = path
+            .extension(widget.audioPath)
+            .replaceFirst('.', '')
+            .toUpperCase();
         _dateAdded = await file.lastModified();
         _fileSize = await file.length();
-        
+
         await _audioPlayer.setSourceDeviceFile(widget.audioPath);
-        
+
         if (mounted) setState(() {});
       }
     } catch (e) {
       print('Error initializing audio: $e');
     }
   }
-
 
   @override
   void dispose() {
@@ -147,7 +148,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
 
   void _showAudioInfo() {
     final nameController = TextEditingController(text: _fileName);
-    
+
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(
@@ -158,7 +159,6 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const SizedBox(height: 16),
-              
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -186,9 +186,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                   ),
                 ],
               ),
-              
               const SizedBox(height: 12),
-              
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -207,9 +205,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                   ),
                 ],
               ),
-              
               const SizedBox(height: 8),
-              
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -228,9 +224,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                   ),
                 ],
               ),
-              
               const SizedBox(height: 8),
-              
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -249,9 +243,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                   ),
                 ],
               ),
-              
               const SizedBox(height: 8),
-              
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -322,16 +314,16 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
   void _onProgressBarTap(TapDownDetails details) async {
     final RenderBox box = context.findRenderObject() as RenderBox;
     final Offset localOffset = box.globalToLocal(details.globalPosition);
-    
+
     final double progressBarStart = 12.0;
     final double progressBarWidth = 280.0 - 24.0;
     final double tapPosition = localOffset.dx - progressBarStart;
     final double progress = (tapPosition / progressBarWidth).clamp(0.0, 1.0);
-    
+
     final Duration newPosition = Duration(
       milliseconds: (_duration.inMilliseconds * progress).round(),
     );
-    
+
     await _audioPlayer.seek(newPosition);
   }
 
@@ -343,24 +335,26 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
         color: CupertinoColors.systemBackground.resolveFrom(context),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: widget.isSelected 
-              ? CupertinoColors.activeBlue 
+          color: widget.isSelected
+              ? CupertinoColors.activeBlue
               : CupertinoColors.separator.resolveFrom(context),
           width: widget.isSelected ? 2 : 1,
         ),
-        boxShadow: widget.isDragging ? [
-          BoxShadow(
-            color: CupertinoColors.systemGrey.withOpacity(0.5),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ] : [
-          BoxShadow(
-            color: CupertinoColors.systemGrey.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: widget.isDragging
+            ? [
+                BoxShadow(
+                  color: CupertinoColors.systemGrey.withOpacity(0.5),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: CupertinoColors.systemGrey.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -371,7 +365,8 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: CupertinoColors.systemGrey6.resolveFrom(context),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: Row(
               children: [
@@ -380,9 +375,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                   size: 16,
                   color: CupertinoColors.systemBlue,
                 ),
-                
                 const SizedBox(width: 8),
-                
                 Expanded(
                   child: GestureDetector(
                     onTap: widget.isDragging ? null : _showAudioInfo,
@@ -402,14 +395,14 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                           '${_formatFileSize(_fileSize)} • ${_formatDuration(_duration)}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                            color: CupertinoColors.secondaryLabel
+                                .resolveFrom(context),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                
                 if (!widget.isDragging) ...[
                   // Info button
                   CupertinoButton(
@@ -422,7 +415,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                       color: CupertinoColors.systemBlue,
                     ),
                   ),
-                  
+
                   // Remove button
                   CupertinoButton(
                     padding: EdgeInsets.zero,
@@ -438,7 +431,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
               ],
             ),
           ),
-          
+
           // Controls Section (disabled during drag)
           Container(
             padding: const EdgeInsets.all(12),
@@ -456,14 +449,15 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                       _formatDuration(_duration),
                       style: TextStyle(
                         fontSize: 12,
-                        color: CupertinoColors.secondaryLabel.resolveFrom(context),
+                        color:
+                            CupertinoColors.secondaryLabel.resolveFrom(context),
                       ),
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 8),
-                
+
                 // Progress bar
                 GestureDetector(
                   onTapDown: widget.isDragging ? null : _onProgressBarTap,
@@ -472,21 +466,21 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                     width: double.infinity,
                     alignment: Alignment.center,
                     child: LinearProgressIndicator(
-                      value: _duration.inMilliseconds > 0 
-                          ? _position.inMilliseconds / _duration.inMilliseconds 
+                      value: _duration.inMilliseconds > 0
+                          ? _position.inMilliseconds / _duration.inMilliseconds
                           : 0,
-                      backgroundColor: CupertinoColors.systemGrey4.resolveFrom(context),
+                      backgroundColor:
+                          CupertinoColors.systemGrey4.resolveFrom(context),
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        widget.isDragging 
-                            ? CupertinoColors.systemGrey2.resolveFrom(context)
-                            : CupertinoColors.systemBlue
-                      ),
+                          widget.isDragging
+                              ? CupertinoColors.systemGrey2.resolveFrom(context)
+                              : CupertinoColors.systemBlue),
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 12),
-                
+
                 // Control buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -498,7 +492,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                       child: Icon(
                         CupertinoIcons.gobackward_10,
                         size: 24,
-                        color: widget.isDragging 
+                        color: widget.isDragging
                             ? CupertinoColors.systemGrey2.resolveFrom(context)
                             : null,
                       ),
@@ -508,11 +502,11 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                       minSize: 40,
                       onPressed: widget.isDragging ? null : _togglePlayPause,
                       child: Icon(
-                        _isPlaying 
-                            ? CupertinoIcons.pause_circle_fill 
+                        _isPlaying
+                            ? CupertinoIcons.pause_circle_fill
                             : CupertinoIcons.play_circle_fill,
                         size: 32,
-                        color: widget.isDragging 
+                        color: widget.isDragging
                             ? CupertinoColors.systemGrey2.resolveFrom(context)
                             : CupertinoColors.systemBlue,
                       ),
@@ -524,7 +518,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                       child: Icon(
                         CupertinoIcons.goforward_10,
                         size: 24,
-                        color: widget.isDragging 
+                        color: widget.isDragging
                             ? CupertinoColors.systemGrey2.resolveFrom(context)
                             : null,
                       ),

@@ -40,17 +40,20 @@ class Note {
       createdAt: DateTime.parse(map['createdAt']),
       isPinned: (map['isPinned'] ?? 0) == 1,
       imagePaths: (map['imagePaths'] as String?)
-          ?.split('|')
-          .where((s) => s.isNotEmpty)
-          .toList() ?? [],
+              ?.split('|')
+              .where((s) => s.isNotEmpty)
+              .toList() ??
+          [],
       audioPaths: (map['audioPaths'] as String?)
-          ?.split('|')
-          .where((s) => s.isNotEmpty)
-          .toList() ?? [],
+              ?.split('|')
+              .where((s) => s.isNotEmpty)
+              .toList() ??
+          [],
       tags: (map['tags'] as String?)
-          ?.split('|')
-          .where((s) => s.isNotEmpty)
-          .toList() ?? [],
+              ?.split('|')
+              .where((s) => s.isNotEmpty)
+              .toList() ??
+          [],
     );
   }
 }

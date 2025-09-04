@@ -27,7 +27,7 @@ class TodoOverlayManager {
       id: todoId,
       content: content,
     );
-    
+
     _todoItems.add(todoItem);
     _todoPositions[todoId] = position;
     onStateChanged();
@@ -81,7 +81,7 @@ class TodoOverlayManager {
       newPosition.dx.clamp(0, _containerSize.width - 250),
       newPosition.dy.clamp(0, _containerSize.height - 100),
     );
-    
+
     _todoPositions[todoId] = constrainedPosition;
     onStateChanged();
     onMetadataChanged();
@@ -90,19 +90,20 @@ class TodoOverlayManager {
   void _loadTodoMetadata(String text) {
     final RegExp metadataRegex = RegExp(r'\[TODO_META:([^\]]+)\]');
     final match = metadataRegex.firstMatch(text);
-    
+
     if (match != null) {
       try {
         final metadataJson = match.group(1);
         final decodedBytes = base64Decode(metadataJson!);
         final metadataString = utf8.decode(decodedBytes);
         final metadata = jsonDecode(metadataString) as Map<String, dynamic>;
-        
+
         if (metadata.containsKey('todos')) {
           final todos = metadata['todos'] as List<dynamic>;
-          _todoItems = todos.map((todoMap) => TodoItem.fromMap(todoMap)).toList();
+          _todoItems =
+              todos.map((todoMap) => TodoItem.fromMap(todoMap)).toList();
         }
-        
+
         if (metadata.containsKey('positions')) {
           final positions = metadata['positions'] as Map<String, dynamic>;
           _todoPositions = {};
@@ -121,36 +122,36 @@ class TodoOverlayManager {
   }
 
   String saveTodoMetadata(String text) {
-  // Remove existing metadata first
-  text = text.replaceAll(RegExp(r'\[TODO_META:[^\]]+\]\n?'), '');
-  
-  // Don't add metadata if there are no todos
-  if (_todoItems.isEmpty) {
-    return text;
-  }
-  
-  final Map<String, dynamic> metadata = {
-    'todos': _todoItems.map((item) => item.toMap()).toList(),
-    'positions': <String, dynamic>{},
-  };
-  
-  final positions = metadata['positions'] as Map<String, dynamic>;
-  for (final entry in _todoPositions.entries) {
-    positions[entry.key] = {
-      'x': entry.value.dx,
-      'y': entry.value.dy,
+    // Remove existing metadata first
+    text = text.replaceAll(RegExp(r'\[TODO_META:[^\]]+\]\n?'), '');
+
+    // Don't add metadata if there are no todos
+    if (_todoItems.isEmpty) {
+      return text;
+    }
+
+    final Map<String, dynamic> metadata = {
+      'todos': _todoItems.map((item) => item.toMap()).toList(),
+      'positions': <String, dynamic>{},
     };
+
+    final positions = metadata['positions'] as Map<String, dynamic>;
+    for (final entry in _todoPositions.entries) {
+      positions[entry.key] = {
+        'x': entry.value.dx,
+        'y': entry.value.dy,
+      };
+    }
+
+    final metadataString = jsonEncode(metadata);
+    final encodedMetadata = base64Encode(utf8.encode(metadataString));
+
+    final cleanText = text.trim();
+    // Always append metadata with a newline separator
+    return cleanText.isEmpty
+        ? '[TODO_META:$encodedMetadata]'
+        : '$cleanText\n[TODO_META:$encodedMetadata]';
   }
-  
-  final metadataString = jsonEncode(metadata);
-  final encodedMetadata = base64Encode(utf8.encode(metadataString));
-  
-  final cleanText = text.trim();
-  // Always append metadata with a newline separator
-  return cleanText.isEmpty 
-      ? '[TODO_META:$encodedMetadata]'
-      : '$cleanText\n[TODO_META:$encodedMetadata]';
-}
 
   void initializeFromText(String text) {
     _todoItems.clear();
@@ -163,7 +164,7 @@ class TodoOverlayManager {
     return _todoItems.map((todoItem) {
       final position = _todoPositions[todoItem.id] ?? const Offset(20, 20);
       final isSelected = _selectedTodoId == todoItem.id;
-      
+
       return TodoWidget(
         todoItem: todoItem,
         position: position,

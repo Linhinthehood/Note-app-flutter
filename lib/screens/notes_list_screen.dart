@@ -45,7 +45,8 @@ class NotesListScreen extends StatelessWidget {
                       CupertinoSearchTextField(
                         placeholder: 'Search notes...',
                         // Fix: Make this async since searchNotes is now async
-                        onChanged: (value) async => await noteProvider.searchNotes(value),
+                        onChanged: (value) async =>
+                            await noteProvider.searchNotes(value),
                         onSuffixTap: () => noteProvider.clearSearch(),
                       ),
                       // Add search indicator
@@ -55,17 +56,17 @@ class NotesListScreen extends StatelessWidget {
                           child: Row(
                             children: [
                               Icon(
-                                noteProvider.isUsingSemanticSearch 
-                                  ? CupertinoIcons.sparkles 
-                                  : CupertinoIcons.search,
+                                noteProvider.isUsingSemanticSearch
+                                    ? CupertinoIcons.sparkles
+                                    : CupertinoIcons.search,
                                 size: 12,
                                 color: CupertinoColors.systemGrey,
                               ),
                               SizedBox(width: 4),
                               Text(
-                                noteProvider.isUsingSemanticSearch 
-                                  ? 'Smart search' 
-                                  : 'Basic search',
+                                noteProvider.isUsingSemanticSearch
+                                    ? 'Smart search'
+                                    : 'Basic search',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: CupertinoColors.systemGrey,
@@ -85,7 +86,7 @@ class NotesListScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                
+
                 // Notes List
                 Expanded(
                   child: _buildNotesList(context, noteProvider),
@@ -102,7 +103,7 @@ class NotesListScreen extends StatelessWidget {
     if (noteProvider.notes.isEmpty) {
       return Center(
         child: Text(
-          noteProvider.searchQuery.isEmpty 
+          noteProvider.searchQuery.isEmpty
               ? 'No notes yet. Add one!'
               : 'No notes found for "${noteProvider.searchQuery}"',
           style: TextStyle(
@@ -287,7 +288,7 @@ class NotesListScreen extends StatelessWidget {
         ),
       );
     }
-    
+
     // Check for audio files
     if (note.audioPaths.isNotEmpty) {
       return Container(
@@ -304,32 +305,35 @@ class NotesListScreen extends StatelessWidget {
         ),
       );
     }
-    
+
     return null;
   }
 
   // Helper method to build tags
   Widget _buildTags(List<String> tags) {
     if (tags.isEmpty) return const SizedBox.shrink();
-    
+
     return Wrap(
       spacing: 6,
       runSpacing: 4,
-      children: tags.take(3).map((tag) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: CupertinoColors.activeBlue.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          '#$tag',
-          style: const TextStyle(
-            fontSize: 12,
-            color: CupertinoColors.activeBlue,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      )).toList(),
+      children: tags
+          .take(3)
+          .map((tag) => Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.activeBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '#$tag',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: CupertinoColors.activeBlue,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ))
+          .toList(),
     );
   }
 
@@ -337,7 +341,7 @@ class NotesListScreen extends StatelessWidget {
       BuildContext context, NoteProvider noteProvider, Note note) {
     final cleanContent = _getCleanContent(note.content);
     final mediaPreview = _getMediaPreview(note);
-    
+
     return Dismissible(
       key: Key(note.id.toString()),
       background: Container(
@@ -483,9 +487,9 @@ class NotesListScreen extends StatelessWidget {
                   ],
                 ],
               ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Content preview
               if (cleanContent.isNotEmpty)
                 Text(
@@ -497,9 +501,9 @@ class NotesListScreen extends StatelessWidget {
                     color: CupertinoColors.label.resolveFrom(context),
                   ),
                 ),
-              
+
               const SizedBox(height: 8),
-              
+
               // Date
               Text(
                 DateFormat.yMMMd().format(note.createdAt),

@@ -4,12 +4,13 @@ import 'providers/note_provider.dart';
 import 'screens/notes_list_screen.dart';
 import 'package:flutter/material.dart';
 import 'services/semantic_search_service.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize database factory for desktop platforms
   await SemanticSearchService.initializeDatabaseFactory();
-  
+
   runApp(MyApp());
 }
 

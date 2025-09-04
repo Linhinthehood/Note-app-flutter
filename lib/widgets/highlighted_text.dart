@@ -30,7 +30,7 @@ class HighlightedText extends StatelessWidget {
   Widget build(BuildContext context) {
     // Clean the text before searching
     final String cleanText = _cleanText(text);
-    
+
     if (searchQuery.isEmpty || cleanText.isEmpty) {
       return Text(cleanText, style: textStyle);
     }
@@ -38,10 +38,10 @@ class HighlightedText extends StatelessWidget {
     final List<TextSpan> spans = [];
     final String lowerCaseText = cleanText.toLowerCase();
     final String lowerCaseQuery = searchQuery.toLowerCase();
-    
+
     int start = 0;
     int index = lowerCaseText.indexOf(lowerCaseQuery);
-    
+
     while (index != -1) {
       // Add text before match
       if (index > start) {
@@ -50,21 +50,22 @@ class HighlightedText extends StatelessWidget {
           style: textStyle,
         ));
       }
-      
+
       // Add highlighted match
       spans.add(TextSpan(
         text: cleanText.substring(index, index + searchQuery.length),
-        style: highlightStyle ?? TextStyle(
-          backgroundColor: CupertinoColors.systemYellow.withOpacity(0.3),
-          color: CupertinoColors.label,
-          fontWeight: FontWeight.bold,
-        ),
+        style: highlightStyle ??
+            TextStyle(
+              backgroundColor: CupertinoColors.systemYellow.withOpacity(0.3),
+              color: CupertinoColors.label,
+              fontWeight: FontWeight.bold,
+            ),
       ));
-      
+
       start = index + searchQuery.length;
       index = lowerCaseText.indexOf(lowerCaseQuery, start);
     }
-    
+
     // Add remaining text
     if (start < cleanText.length) {
       spans.add(TextSpan(
@@ -72,7 +73,7 @@ class HighlightedText extends StatelessWidget {
         style: textStyle,
       ));
     }
-    
+
     return RichText(
       text: TextSpan(children: spans),
     );
