@@ -1,10 +1,15 @@
-// lib/main.dart
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'providers/note_provider.dart';
 import 'screens/notes_list_screen.dart';
+import 'services/semantic_search_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize database factory for desktop platforms
+  await SemanticSearchService.initializeDatabaseFactory();
+
   runApp(const MyApp());
 }
 
@@ -15,7 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => NoteProvider(),
-      child: CupertinoApp(
+      child: const CupertinoApp(
         title: 'Flutter Notes',
         theme: CupertinoThemeData(
           primaryColor: CupertinoColors.systemBlue,
