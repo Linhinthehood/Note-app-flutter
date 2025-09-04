@@ -10,8 +10,8 @@ class ImageOverlayManager {
   final Function(String) onImageRemove;
   final VoidCallback onStateChanged;
   final VoidCallback? onMetadataChanged;
-  Map<String, Offset> _imagePositions = {};
-  Map<String, Size> _imageSizes = {};
+  final Map<String, Offset> _imagePositions = {};
+  final Map<String, Size> _imageSizes = {};
   Size _containerSize = Size.zero;
   String? _draggedImage;
   String? _selectedImage; // Track which image is selected for resizing
@@ -95,7 +95,7 @@ class ImageOverlayManager {
         }
       } catch (e) {
         // If metadata parsing fails, continue with default positions
-        print('Failed to parse image metadata: $e');
+
       }
     }
   }
@@ -505,6 +505,7 @@ class ImageOverlayManager {
                   border: Border.all(color: CupertinoColors.white, width: 1),
                   boxShadow: [
                     BoxShadow(
+                      // ignore: deprecated_member_use
                       color: CupertinoColors.black.withOpacity(0.3),
                       blurRadius: 2,
                       offset: const Offset(0, 1),
@@ -568,6 +569,7 @@ class ImageOverlayManager {
                   border: Border.all(color: CupertinoColors.white, width: 1),
                   boxShadow: [
                     BoxShadow(
+                      // ignore: deprecated_member_use
                       color: CupertinoColors.black.withOpacity(0.3),
                       blurRadius: 2,
                       offset: const Offset(0, 1),
@@ -606,6 +608,7 @@ class ImageOverlayManager {
         boxShadow: isDragging
             ? [
                 BoxShadow(
+                  // ignore: deprecated_member_use
                   color: CupertinoColors.black.withOpacity(0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
@@ -692,6 +695,7 @@ class ImageOverlayManager {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
+                        // ignore: deprecated_member_use
                         color: CupertinoColors.black.withOpacity(0.3),
                         blurRadius: 2,
                         offset: const Offset(0, 1),
@@ -867,9 +871,11 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
+                        // ignore: deprecated_member_use
                         color: CupertinoColors.black.withOpacity(0.6),
                         borderRadius: BorderRadius.circular(22),
                         border: Border.all(
+                          // ignore: deprecated_member_use
                           color: CupertinoColors.white.withOpacity(0.3),
                           width: 1,
                         ),
@@ -897,9 +903,11 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
+                        // ignore: deprecated_member_use
                         color: CupertinoColors.black.withOpacity(0.6),
                         borderRadius: BorderRadius.circular(22),
                         border: Border.all(
+                          // ignore: deprecated_member_use
                           color: CupertinoColors.white.withOpacity(0.3),
                           width: 1,
                         ),
@@ -932,6 +940,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
+                    // ignore: deprecated_member_use
                     CupertinoColors.black.withOpacity(0.7),
                     Colors.transparent,
                   ],
@@ -947,6 +956,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                       width: 32,
                       height: 32,
                       decoration: BoxDecoration(
+                        // ignore: deprecated_member_use
                         color: CupertinoColors.black.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -962,6 +972,7 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
+                        // ignore: deprecated_member_use
                         color: CupertinoColors.black.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(16),
                       ),

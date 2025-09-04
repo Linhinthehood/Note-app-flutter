@@ -22,7 +22,7 @@ class NoteProvider with ChangeNotifier {
   Map<String, bool> get expandedSections => _expandedSections;
 
   final SemanticSearchService _semanticSearch = SemanticSearchService();
-  bool _useSemanticSearch = true;
+  final bool _useSemanticSearch = true;
   bool _indexBuilt = false;
 
   bool get isUsingSemanticSearch => _useSemanticSearch && _indexBuilt;

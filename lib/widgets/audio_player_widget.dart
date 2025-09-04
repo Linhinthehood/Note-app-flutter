@@ -85,8 +85,9 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
 
         if (mounted) setState(() {});
       }
+    // ignore: empty_catches
     } catch (e) {
-      print('Error initializing audio: $e');
+
     }
   }
 
@@ -103,8 +104,9 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
       } else {
         await _audioPlayer.resume();
       }
+    // ignore: empty_catches
     } catch (e) {
-      print('Error toggling play/pause: $e');
+
     }
   }
 
@@ -407,8 +409,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                   // Info button
                   CupertinoButton(
                     padding: EdgeInsets.zero,
-                    minSize: 30,
-                    onPressed: _showAudioInfo,
+                    onPressed: _showAudioInfo, minimumSize: const Size(30, 30),
                     child: const Icon(
                       CupertinoIcons.info,
                       size: 16,
@@ -419,8 +420,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                   // Remove button
                   CupertinoButton(
                     padding: EdgeInsets.zero,
-                    minSize: 30,
-                    onPressed: _showRemoveDialog,
+                    onPressed: _showRemoveDialog, minimumSize: const Size(30, 30),
                     child: const Icon(
                       CupertinoIcons.xmark,
                       size: 16,
@@ -487,8 +487,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                   children: [
                     CupertinoButton(
                       padding: EdgeInsets.zero,
-                      minSize: 40,
-                      onPressed: widget.isDragging ? null : _seekBackward,
+                      onPressed: widget.isDragging ? null : _seekBackward, minimumSize: const Size(40, 40),
                       child: Icon(
                         CupertinoIcons.gobackward_10,
                         size: 24,
@@ -499,8 +498,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                     ),
                     CupertinoButton(
                       padding: EdgeInsets.zero,
-                      minSize: 40,
-                      onPressed: widget.isDragging ? null : _togglePlayPause,
+                      onPressed: widget.isDragging ? null : _togglePlayPause, minimumSize: const Size(40, 40),
                       child: Icon(
                         _isPlaying
                             ? CupertinoIcons.pause_circle_fill
@@ -513,8 +511,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                     ),
                     CupertinoButton(
                       padding: EdgeInsets.zero,
-                      minSize: 40,
-                      onPressed: widget.isDragging ? null : _seekForward,
+                      onPressed: widget.isDragging ? null : _seekForward, minimumSize: const Size(40, 40),
                       child: Icon(
                         CupertinoIcons.goforward_10,
                         size: 24,

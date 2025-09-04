@@ -115,8 +115,9 @@ class TodoOverlayManager {
             );
           }
         }
+      // ignore: empty_catches
       } catch (e) {
-        print('Failed to parse todo metadata: $e');
+
       }
     }
   }

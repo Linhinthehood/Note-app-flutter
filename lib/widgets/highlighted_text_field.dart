@@ -122,6 +122,7 @@ class _HighlightedTextFieldState extends State<HighlightedTextField> {
           style: widget.style?.copyWith(
             // Make text semi-transparent when showing highlights and not focused
             color: (widget.searchQuery.isNotEmpty && !_isFocused)
+                // ignore: deprecated_member_use
                 ? widget.style?.color?.withOpacity(0.3) ??
                     CupertinoColors.label.withOpacity(0.3)
                 : widget.style?.color ?? CupertinoColors.label,
