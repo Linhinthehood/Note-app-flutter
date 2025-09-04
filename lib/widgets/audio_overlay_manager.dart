@@ -43,9 +43,8 @@ class AudioOverlayManager {
   final VoidCallback onStateChanged;
   final VoidCallback onMetadataChanged;
 
-  List<AudioItem> _audioItems = [];
+  final List<AudioItem> _audioItems = [];
   String? _selectedAudioPath;
-  String? _draggedAudio;
   Size _containerSize = Size.zero;
   Offset? _dragAnchorPoint;
 
@@ -155,8 +154,9 @@ class AudioOverlayManager {
             }
           }
         }
+      // ignore: empty_catches
       } catch (e) {
-        print('Failed to parse audio metadata: $e');
+
       }
     }
   }
@@ -301,13 +301,11 @@ class AudioOverlayManager {
                 ),
               ),
               onDragStarted: () {
-                _draggedAudio = audioPath;
                 _selectedAudioPath = null;
                 onStateChanged();
                 HapticFeedback.mediumImpact();
               },
               onDragEnd: (details) {
-                _draggedAudio = null;
 
                 final RenderBox? renderBox =
                     context.findRenderObject() as RenderBox?;

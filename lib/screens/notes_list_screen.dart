@@ -29,7 +29,7 @@ class NotesListScreen extends StatelessWidget {
               builder: (context) => const NoteEditScreen(),
             ));
           },
-          child: Icon(CupertinoIcons.add),
+          child: const Icon(CupertinoIcons.add),
         ),
       ),
       child: SafeArea(
@@ -39,7 +39,7 @@ class NotesListScreen extends StatelessWidget {
               children: [
                 // Enhanced Search Bar with indicator
                 Container(
-                  padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                   child: Column(
                     children: [
                       CupertinoSearchTextField(
@@ -52,7 +52,7 @@ class NotesListScreen extends StatelessWidget {
                       // Add search indicator
                       if (noteProvider.searchQuery.isNotEmpty)
                         Padding(
-                          padding: EdgeInsets.only(top: 4),
+                          padding: const EdgeInsets.only(top: 4),
                           child: Row(
                             children: [
                               Icon(
@@ -62,20 +62,20 @@ class NotesListScreen extends StatelessWidget {
                                 size: 12,
                                 color: CupertinoColors.systemGrey,
                               ),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Text(
                                 noteProvider.isUsingSemanticSearch
                                     ? 'Smart search'
                                     : 'Basic search',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 12,
                                   color: CupertinoColors.systemGrey,
                                 ),
                               ),
-                              Spacer(),
+                              const Spacer(),
                               Text(
                                 '${noteProvider.notes.length} result${noteProvider.notes.length == 1 ? '' : 's'}',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 12,
                                   color: CupertinoColors.systemGrey,
                                 ),
@@ -117,12 +117,12 @@ class NotesListScreen extends StatelessWidget {
     // If searching, show simple list without grouping
     if (noteProvider.searchQuery.isNotEmpty) {
       return ListView.builder(
-        padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
         itemCount: noteProvider.notes.length,
         itemBuilder: (context, index) {
           final note = noteProvider.notes[index];
           return Padding(
-            padding: EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: 12),
             child: _buildNoteCard(context, noteProvider, note),
           );
         },
@@ -144,7 +144,7 @@ class NotesListScreen extends StatelessWidget {
     });
 
     return ListView.builder(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       itemCount: _calculateTotalItems(noteProvider, monthKeys),
       itemBuilder: (context, index) {
         return _buildItem(context, noteProvider, monthKeys, index);

@@ -33,9 +33,8 @@ class NoteProvider with ChangeNotifier {
     try {
       await _semanticSearch.indexNotes(_allNotes);
       _indexBuilt = true;
-      print('Semantic search index built with ${_allNotes.length} notes');
+
     } catch (e) {
-      print('Failed to build search index: $e');
       _indexBuilt = false;
     }
   }
@@ -87,8 +86,9 @@ class NoteProvider with ChangeNotifier {
             return;
           }
         }
+      // ignore: empty_catches
       } catch (e) {
-        print('Semantic search failed: $e');
+
       }
     }
 

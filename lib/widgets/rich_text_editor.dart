@@ -36,6 +36,7 @@ class RichTextEditor extends StatefulWidget {
 
   @override
   State<RichTextEditor> createState() => _RichTextEditorState();
+  // ignore: library_private_types_in_public_api
   static _RichTextEditorState? of(BuildContext context) {
     return context.findAncestorStateOfType<_RichTextEditorState>();
   }

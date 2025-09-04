@@ -106,6 +106,7 @@ class _TodoCreationDialogState extends State<TodoCreationDialog> {
         ),
         CupertinoDialogAction(
           isDefaultAction: true,
+          onPressed: _createTodo,
           child: const Text(
             'Create',
             style: TextStyle(
@@ -113,7 +114,6 @@ class _TodoCreationDialogState extends State<TodoCreationDialog> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          onPressed: _createTodo,
         ),
       ],
     );

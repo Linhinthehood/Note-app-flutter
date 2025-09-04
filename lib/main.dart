@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'providers/note_provider.dart';
 import 'screens/notes_list_screen.dart';
-import 'package:flutter/material.dart';
 import 'services/semantic_search_service.dart';
 
 void main() async {
@@ -11,7 +10,7 @@ void main() async {
   // Initialize database factory for desktop platforms
   await SemanticSearchService.initializeDatabaseFactory();
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {

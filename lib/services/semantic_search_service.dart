@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../models/note.dart';
 
@@ -12,8 +11,8 @@ class SemanticSearchService {
   static const String _dbName = 'semantic_search.db';
   static const String _assetDbPath = 'assets/databases/comprehensive_search.db';
   Database? _database;
-  Map<String, double> _idfScores = {};
-  Map<int, Map<String, double>> _docVectors = {};
+  final Map<String, double> _idfScores = {};
+  final Map<int, Map<String, double>> _docVectors = {};
   bool _isPrebuiltLoaded = false;
 
   // Cache for performance
@@ -56,14 +55,14 @@ class SemanticSearchService {
 
   Future<void> _copyDatabaseFromAssets(String dbPath) async {
     try {
-      print('Loading comprehensive database from assets...');
+    
       final data = await rootBundle.load(_assetDbPath);
       final bytes = data.buffer.asUint8List();
 
       final file = File(dbPath);
       await file.writeAsBytes(bytes);
 
-      print('Comprehensive database loaded successfully');
+     
 
       final db = await openDatabase(dbPath);
       final vocabResult =
@@ -74,13 +73,12 @@ class SemanticSearchService {
       final vocabCount = vocabResult.first['count'];
       final docCount = docResult.first['count'];
 
-      print(
-          'Database contains $vocabCount vocabulary terms and $docCount training documents');
+
       await db.close();
 
       _isPrebuiltLoaded = true;
     } catch (e) {
-      print('Failed to load database from assets: $e');
+
       await _createEmptyDatabase(dbPath);
     }
   }
@@ -167,8 +165,12 @@ class SemanticSearchService {
 
     final dp = List.generate(len1 + 1, (i) => List.filled(len2 + 1, 0));
 
-    for (int i = 0; i <= len1; i++) dp[i][0] = i;
-    for (int j = 0; j <= len2; j++) dp[0][j] = j;
+    for (int i = 0; i <= len1; i++) {
+      dp[i][0] = i;
+    }
+    for (int j = 0; j <= len2; j++) {
+      dp[0][j] = j;
+    }
 
     for (int i = 1; i <= len1; i++) {
       for (int j = 1; j <= len2; j++) {
@@ -277,8 +279,6 @@ class SemanticSearchService {
       _docVectors[docId] = vector;
     }
 
-    print(
-        'Loaded ${_idfScores.length} vocabulary terms and ${_docVectors.length} document vectors');
   }
 
   List<String> _tokenize(String text) {
@@ -341,8 +341,7 @@ class SemanticSearchService {
         await db.rawQuery('SELECT MAX(doc_id) as max_id FROM documents');
     final maxPrebuiltId = (result.first['max_id'] as int?) ?? -1;
 
-    print(
-        'Adding ${notes.length} user notes to prebuilt database (starting from ID ${maxPrebuiltId + 1})');
+
 
     final batch = db.batch();
     for (int i = 0; i < notes.length; i++) {
@@ -364,7 +363,7 @@ class SemanticSearchService {
     }
 
     await batch.commit();
-    print('User notes integrated with prebuilt database');
+ 
   }
 
   // Enhanced search with fuzzy matching
