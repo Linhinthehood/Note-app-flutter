@@ -48,7 +48,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap the add button
-      await tester.tap(find.byIcon(CupertinoIcons.add));
+      await tester.tap(find.byIcon(CupertinoIcons.create_solid));
       await tester.pumpAndSettle();
 
       // Should navigate to edit screen
