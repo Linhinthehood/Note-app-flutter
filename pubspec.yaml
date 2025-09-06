@@ -1,4 +1,4 @@
-name: Notes
+name: notes
 description: "A Flutter note-taking app with CI/CD pipeline"
 publish_to: 'none'
 version: 1.0.0+1

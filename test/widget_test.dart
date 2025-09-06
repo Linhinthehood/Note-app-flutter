@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:Notes/main.dart';
-import 'package:Notes/providers/note_provider.dart';
-import 'package:Notes/screens/notes_list_screen.dart';
+import 'package:notes/main.dart';
+import 'package:notes/providers/note_provider.dart';
+import 'package:notes/screens/notes_list_screen.dart';
 
 void main() {
   group('Notes App Tests', () {
