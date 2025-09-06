@@ -437,7 +437,8 @@ class _NoteEditScreenState extends State<NoteEditScreen>
 
   CupertinoNavigationBar _buildNavigationBar() {
     return CupertinoNavigationBar(
-      middle: Text(_currentNote == null ? 'New Note' : '${_currentNote!.title}'),
+      middle:
+          Text(_currentNote == null ? 'New Note' : '${_currentNote!.title}'),
       leading: CupertinoButton(
         padding: EdgeInsets.zero,
         onPressed: _goBack,
