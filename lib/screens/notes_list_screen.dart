@@ -29,7 +29,7 @@ class NotesListScreen extends StatelessWidget {
               builder: (context) => const NoteEditScreen(),
             ));
           },
-          child: const Icon(CupertinoIcons.add),
+          child: const Icon(CupertinoIcons.create_solid),
         ),
       ),
       child: SafeArea(
