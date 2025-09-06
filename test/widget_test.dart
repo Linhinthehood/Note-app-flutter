@@ -1,16 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:note_app/main.dart';
-import 'package:note_app/providers/note_provider.dart';
-import 'package:note_app/screens/notes_list_screen.dart';
+import 'package:Notes/main.dart';
+import 'package:Notes/providers/note_provider.dart';
+import 'package:Notes/screens/notes_list_screen.dart';
 
 void main() {
   group('Notes App Tests', () {
     testWidgets('App should launch without crashing',
         (WidgetTester tester) async {
       await tester.pumpWidget(
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<NoteProvider>(
           create: (_) => NoteProvider.forTesting(),
           child: const MyApp(),
         ),
@@ -23,7 +23,7 @@ void main() {
     testWidgets('NotesListScreen displays empty state',
         (WidgetTester tester) async {
       await tester.pumpWidget(
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<NoteProvider>(
           create: (_) => NoteProvider.forTesting(),
           child: const CupertinoApp(
             home: NotesListScreen(),
@@ -37,7 +37,7 @@ void main() {
 
     testWidgets('Can navigate to add note screen', (WidgetTester tester) async {
       await tester.pumpWidget(
-        ChangeNotifierProvider(
+        ChangeNotifierProvider<NoteProvider>(
           create: (_) => NoteProvider.forTesting(),
           child: const CupertinoApp(
             home: NotesListScreen(),
