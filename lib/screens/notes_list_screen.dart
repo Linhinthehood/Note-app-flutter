@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/note.dart';
 import '../providers/note_provider.dart';
+import '../providers/theme_provider.dart';
 import 'note_edit_screen.dart';
 
 class NotesListScreen extends StatelessWidget {
@@ -22,14 +23,32 @@ class NotesListScreen extends StatelessWidget {
             color: CupertinoColors.label.resolveFrom(context),
           ),
         ),
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () {
-            Navigator.of(context).push(CupertinoPageRoute(
-              builder: (context) => const NoteEditScreen(),
-            ));
-          },
-          child: const Icon(CupertinoIcons.add),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Consumer<ThemeProvider>(
+              builder: (context, themeProvider, _) {
+                return CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: () => themeProvider.toggleTheme(),
+                  child: Icon(
+                    themeProvider.isDark
+                        ? CupertinoIcons.sun_max
+                        : CupertinoIcons.moon,
+                  ),
+                );
+              },
+            ),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () {
+                Navigator.of(context).push(CupertinoPageRoute(
+                  builder: (context) => const NoteEditScreen(),
+                ));
+              },
+              child: const Icon(CupertinoIcons.add),
+            ),
+          ],
         ),
       ),
       child: SafeArea(

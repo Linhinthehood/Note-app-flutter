@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'providers/note_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/notes_list_screen.dart';
 import 'services/semantic_search_service.dart';
 
@@ -18,16 +19,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => NoteProvider(),
-      child: const CupertinoApp(
-        title: 'Flutter Notes',
-        theme: CupertinoThemeData(
-          primaryColor: CupertinoColors.systemBlue,
-          scaffoldBackgroundColor: CupertinoColors.systemGroupedBackground,
-        ),
-        debugShowCheckedModeBanner: false,
-        home: NotesListScreen(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => NoteProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return CupertinoApp(
+            title: 'Flutter Notes',
+            theme: themeProvider.themeData,
+            debugShowCheckedModeBanner: false,
+            home: const NotesListScreen(),
+          );
+        },
       ),
     );
   }
