@@ -39,6 +39,7 @@ class NotesListScreen extends StatelessWidget {
                 );
               },
             ),
+            const SizedBox(width: 8),
             CupertinoButton(
               padding: EdgeInsets.zero,
               onPressed: () {

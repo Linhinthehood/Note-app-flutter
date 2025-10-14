@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:note_app/main.dart';
 import 'package:note_app/providers/note_provider.dart';
+import 'package:note_app/providers/theme_provider.dart';
 import 'package:note_app/screens/notes_list_screen.dart';
 
 void main() {
@@ -23,8 +24,11 @@ void main() {
     testWidgets('NotesListScreen displays empty state',
         (WidgetTester tester) async {
       await tester.pumpWidget(
-        ChangeNotifierProvider(
-          create: (_) => NoteProvider.forTesting(),
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => NoteProvider.forTesting()),
+            ChangeNotifierProvider(create: (_) => ThemeProvider()),
+          ],
           child: const CupertinoApp(
             home: NotesListScreen(),
           ),
@@ -37,8 +41,11 @@ void main() {
 
     testWidgets('Can navigate to add note screen', (WidgetTester tester) async {
       await tester.pumpWidget(
-        ChangeNotifierProvider(
-          create: (_) => NoteProvider.forTesting(),
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider(create: (_) => NoteProvider.forTesting()),
+            ChangeNotifierProvider(create: (_) => ThemeProvider()),
+          ],
           child: const CupertinoApp(
             home: NotesListScreen(),
           ),
