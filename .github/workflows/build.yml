@@ -65,7 +65,11 @@ jobs:
       - name: Create IPA from Archive
         run: |
           cd build/ios/archive
-          xcodebuild -exportArchive -archivePath Runner.xcarchive -exportPath ../ipa -exportOptionsPlist /dev/null
+          # Tạo IPA đơn giản từ .app
+          mkdir -p ../ipa
+          cp -r Runner.xcarchive/Products/Applications/Runner.app ../ipa/
+          cd ../ipa
+          zip -r Runner.ipa Runner.app
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
