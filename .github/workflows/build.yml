@@ -59,23 +59,23 @@ jobs:
       - name: Test
         run: flutter test
 
-      - name: Build iOS Archive (no codesign)
-        run: flutter build ipa --release --no-codesign
+      # Build iOS without codesign (tạo Runner.app)
+      - name: Build iOS (no codesign)
+        run: flutter build ios --release --no-codesign
 
-      - name: Create IPA from Archive
+      # Đóng gói IPA unsigned với cấu trúc Payload/Runner.app
+      - name: Package unsigned IPA
         run: |
-          cd build/ios/archive
-          # Tạo IPA đơn giản từ .app
-          mkdir -p ../ipa
-          cp -r Runner.xcarchive/Products/Applications/Runner.app ../ipa/
-          cd ../ipa
-          zip -r Runner.ipa Runner.app
+          mkdir -p build/ios/ipa/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/ipa/Payload/
+          (cd build/ios/ipa && zip -r Runner-unsigned.ipa Payload)
 
-      - name: Upload IPA Artifact
+      # Upload cả Runner.app và IPA unsigned để tham chiếu
+      - name: Upload iOS Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-ipa-unsigned
-          path: build/ios/ipa/
+          name: ios-build-unsigned
+          path: |
+            build/ios/iphoneos/Runner.app
+            build/ios/ipa/Runner-unsigned.ipa
           retention-days: 30
-
-
