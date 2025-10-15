@@ -59,14 +59,19 @@ jobs:
       - name: Test
         run: flutter test
 
-      - name: Build iOS IPA (unsigned)
+      - name: Build iOS Archive (no codesign)
         run: flutter build ipa --release --no-codesign
+
+      - name: Create IPA from Archive
+        run: |
+          cd build/ios/archive
+          xcodebuild -exportArchive -archivePath Runner.xcarchive -exportPath ../ipa -exportOptionsPlist /dev/null
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-ipa-unsigned
-          path: build/ios/ipa/*.ipa
+          path: build/ios/ipa/
           retention-days: 30
 
 
